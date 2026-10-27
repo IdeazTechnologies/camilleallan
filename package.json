@@ -1,24 +1,59 @@
 {
-  "name": "camilleallan2027",
+  "name": "camilleallan",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run db:migrate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate-db.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:check": "tsx scripts/db-check.ts",
+    "make-admin": "tsx scripts/make-admin.ts",
+    "export:woocommerce": "tsx scripts/export-woocommerce.ts",
+    "migrate:woocommerce": "tsx scripts/migrate-woocommerce.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "overrides": {
+    "zod": "^4.6.7"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.3",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.1",
+    "@vercel/blob": "^2.8.2",
+    "@vercel/functions": "^3.10.4",
+    "drizzle-orm": "^0.45.4",
+    "marked": "^18.1.2",
     "next": "16.4.3",
+    "next-auth": "^5.0.0-beta.32",
+    "pg": "^8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "sanitize-html": "^2.18.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.2",
+    "dotenv": "^18.0.9",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
-    "typescript": "^5"
+    "mysql2": "^3.24.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

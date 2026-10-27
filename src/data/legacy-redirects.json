@@ -1,0 +1,94 @@
+[
+  {
+    "source": "/about-v1",
+    "destination": "/about"
+  },
+  {
+    "source": "/about-v2",
+    "destination": "/about"
+  },
+  {
+    "source": "/about-v3",
+    "destination": "/about"
+  },
+  {
+    "source": "/press-2",
+    "destination": "/press"
+  },
+  {
+    "source": "/for-sale",
+    "destination": "/shop"
+  },
+  {
+    "source": "/interactive",
+    "destination": "/"
+  },
+  {
+    "source": "/faqs",
+    "destination": "/contact"
+  },
+  {
+    "source": "/order-tracking",
+    "destination": "/account"
+  },
+  {
+    "source": "/blog",
+    "destination": "/"
+  },
+  {
+    "source": "/my-instagram-feed",
+    "destination": "/"
+  },
+  {
+    "source": "/sample-page",
+    "destination": "/"
+  },
+  {
+    "source": "/elements/:path*",
+    "destination": "/"
+  },
+  {
+    "source": "/home/:path*",
+    "destination": "/"
+  },
+  {
+    "source": "/product-category/coffee-tea-saucers",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/cups-glassware",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/dining-benches",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/furniture",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/gifts",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/kitchen-dining",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/lighting",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/miscellaneous",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/office",
+    "destination": "/shop"
+  },
+  {
+    "source": "/product-category/uncategorized",
+    "destination": "/shop"
+  }
+]

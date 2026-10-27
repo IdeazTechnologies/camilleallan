@@ -1,0 +1,37 @@
+.grid {
+  list-style: none;
+  padding: 0;
+  columns: 4 240px;
+  column-gap: var(--space-4);
+}
+
+.item {
+  break-inside: avoid;
+  margin-bottom: var(--space-4);
+}
+
+.button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--color-surface-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: zoom-in;
+
+  & img {
+    width: 100%;
+    height: auto;
+    transition: scale 0.6s var(--ease), opacity 0.3s var(--ease);
+  }
+  &:hover img {
+    scale: 1.03;
+  }
+}
+
+.caption {
+  margin-top: var(--space-2);
+  font-size: var(--step--1);
+  color: var(--color-muted);
+}
