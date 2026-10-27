@@ -4,7 +4,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { pages } from "@/db/schema";
+import { pages, type PageLayout } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { TAGS } from "@/lib/catalog";
 import { requireAdmin } from "@/lib/dal";
@@ -29,6 +29,7 @@ export async function savePageAction(_prev: ActionState, formData: FormData): Pr
     title,
     slug,
     body: String(formData.get("body") ?? ""),
+    layout: (formData.get("layout") === "cards" ? "cards" : "prose") as PageLayout,
     metaDescription: String(formData.get("metaDescription") ?? "").trim() || null,
     published: checkbox(formData, "published"),
     showInNav: checkbox(formData, "showInNav"),

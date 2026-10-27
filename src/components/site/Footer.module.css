@@ -42,7 +42,7 @@
   }
   &:hover {
     background: var(--color-text);
-    color: #fff;
+    color: var(--color-bg);
     border-color: var(--color-text);
   }
 }

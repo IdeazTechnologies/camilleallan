@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { PT_Serif, Poppins } from "next/font/google";
 import { getSettings } from "@/lib/settings";
+import { themeInitScript } from "@/lib/theme";
 import { appUrl } from "@/lib/utils";
 import "./globals.css";
 
@@ -30,12 +31,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#151312",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${poppins.variable} ${ptSerif.variable}`}>
+    // The head script may switch data-theme before hydration.
+    <html lang="en" data-theme="dark" className={`${poppins.variable} ${ptSerif.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

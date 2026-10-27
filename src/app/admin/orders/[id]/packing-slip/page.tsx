@@ -20,7 +20,7 @@ export default async function PackingSlip({ params }: PageProps<"/admin/orders/[
   ]);
   if (!order) notFound();
   return (
-    <div className="card stack stack-lg" style={{ maxWidth: 720, background: "#fff" }}>
+    <div className="card stack stack-lg" style={{ maxWidth: 720, colorScheme: "light", color: "var(--color-text)" }}>
       <div className="spread">
         <div>
           <h1 style={{ fontSize: "var(--step-3)" }}>{settings.storeName}</h1>

@@ -1,5 +1,6 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
+import { splitMarkdownSections } from "./markdown-sections";
 
 const allowed: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -30,6 +31,11 @@ export function renderMarkdown(source: string | null | undefined) {
   if (!source) return "";
   const html = marked.parse(source, { async: false, gfm: true, breaks: true }) as string;
   return sanitizeHtml(html, allowed);
+}
+
+export function renderMarkdownSections(source: string | null | undefined) {
+  if (!source) return [];
+  return splitMarkdownSections(source).map(renderMarkdown);
 }
 
 export function markdownToText(source: string | null | undefined) {

@@ -4,7 +4,9 @@ import { marked } from "marked";
 import { useActionState, useDeferredValue, useState } from "react";
 import { FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import type { PageLayout } from "@/db/schema";
 import { initialActionState } from "@/lib/forms";
+import { splitMarkdownSections } from "@/lib/markdown-sections";
 import { savePageAction } from "./actions";
 
 type Page = {
@@ -12,6 +14,7 @@ type Page = {
   title: string;
   slug: string;
   body: string;
+  layout: PageLayout;
   metaDescription: string | null;
   published: boolean;
   showInNav: boolean;
@@ -21,9 +24,12 @@ type Page = {
 export function PageForm({ page }: { page?: Page }) {
   const [state, action] = useActionState(savePageAction, initialActionState);
   const [body, setBody] = useState(page?.body ?? "");
+  const [layout, setLayout] = useState<PageLayout>(page?.layout ?? "prose");
   const deferred = useDeferredValue(body);
   // Admin-only preview of the admin's own content; the public page is sanitized server-side.
-  const preview = marked.parse(deferred, { async: false });
+  const preview = (layout === "cards" ? splitMarkdownSections(deferred) : [deferred]).map((part) =>
+    marked.parse(part, { async: false, breaks: true }),
+  );
 
   return (
     <form action={action} className="form">
@@ -45,12 +51,28 @@ export function PageForm({ page }: { page?: Page }) {
           <textarea id="body" name="body" className="code" value={body} onChange={(e) => setBody(e.target.value)} rows={20} />
           <span className="hint">
             # Heading, ## Subheading, **bold**, *italic*, - lists, [link text](https://…), ![image alt](image-url)
+            {layout === "cards" && <> · Put a line containing only --- between cards.</>}
           </span>
         </div>
         <div className="field">
           <span className="label">Preview</span>
-          <div className="prose panel" style={{ minHeight: 260, maxHeight: 640, overflow: "auto" }} dangerouslySetInnerHTML={{ __html: preview }} />
+          {layout === "cards" ? (
+            <div className="card-list panel" style={{ minHeight: 260, maxHeight: 640, overflow: "auto" }}>
+              {preview.map((html, i) => (
+                <section key={i} className="card prose" dangerouslySetInnerHTML={{ __html: html }} />
+              ))}
+            </div>
+          ) : (
+            <div className="prose panel" style={{ minHeight: 260, maxHeight: 640, overflow: "auto" }} dangerouslySetInnerHTML={{ __html: preview[0] }} />
+          )}
         </div>
+      </div>
+      <div className="field">
+        <label htmlFor="layout">Layout</label>
+        <select id="layout" name="layout" value={layout} onChange={(e) => setLayout(e.target.value as PageLayout)}>
+          <option value="prose">Standard text page</option>
+          <option value="cards">Cards (one card per section)</option>
+        </select>
       </div>
       <div className="field">
         <label htmlFor="metaDescription">Search engine description</label>
