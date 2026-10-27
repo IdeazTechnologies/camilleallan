@@ -6,6 +6,7 @@ import { getCartCount } from "@/lib/cart";
 import { getCurrentUser } from "@/lib/dal";
 import { BagIcon, MenuIcon, UserIcon } from "./icons";
 import { MobileMenuCloser } from "./MobileMenuCloser";
+import { ThemeToggle } from "./ThemeToggle";
 import styles from "./Header.module.css";
 
 async function CartCount() {
@@ -74,6 +75,7 @@ export async function Header() {
           >
             <AccountLink />
           </Suspense>
+          <ThemeToggle className={`${styles.iconLink} ${styles.themeButton}`} />
           <Link href="/cart" className={styles.iconLink} aria-label="Cart">
             <BagIcon />
             <Suspense fallback={null}>

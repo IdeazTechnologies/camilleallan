@@ -1,26 +1,29 @@
 @layer reset, tokens, base, components, utilities;
 
 @layer tokens {
+  /* Each colour is light-dark(light, dark); the active scheme comes from html[data-theme]. */
   :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    --color-bg: #ffffff;
-    --color-surface: #faf7f4;
-    --color-surface-strong: #f2ece6;
-    --color-text: #1d1a18;
-    --color-muted: #6f6660;
-    --color-border: #e8e1da;
-    --color-border-strong: #d6ccc2;
-    --color-accent: #b5776a;
-    --color-accent-strong: #965c50;
-    --color-accent-soft: #f6e9e5;
-    --color-success: #3f7d5a;
-    --color-success-soft: #e6f2ea;
-    --color-warning: #9a6b14;
-    --color-warning-soft: #fbf1dc;
-    --color-danger: #b0413e;
-    --color-danger-soft: #f9e5e4;
-    --color-focus: color-mix(in oklab, var(--color-accent) 70%, white);
+    --color-bg: light-dark(#ffffff, #151312);
+    --color-surface: light-dark(#faf7f4, #1c1917);
+    --color-surface-strong: light-dark(#f2ece6, #2a2522);
+    --color-card: light-dark(#ffffff, #1f1b19);
+    --color-field: light-dark(#ffffff, #1a1716);
+    --color-text: light-dark(#1d1a18, #eee8e2);
+    --color-muted: light-dark(#6f6660, #a99f97);
+    --color-border: light-dark(#e8e1da, #332d29);
+    --color-border-strong: light-dark(#d6ccc2, #4a423c);
+    --color-accent: light-dark(#b5776a, #c98d7f);
+    --color-accent-strong: light-dark(#965c50, #e0a698);
+    --color-accent-soft: light-dark(#f6e9e5, #3b2a25);
+    --color-success: light-dark(#3f7d5a, #7cc79b);
+    --color-success-soft: light-dark(#e6f2ea, #1c2e23);
+    --color-warning: light-dark(#9a6b14, #e0b25c);
+    --color-warning-soft: light-dark(#fbf1dc, #33291a);
+    --color-danger: light-dark(#b0413e, #ec8783);
+    --color-danger-soft: light-dark(#f9e5e4, #3d2120);
+    --color-focus: color-mix(in oklab, var(--color-accent) 70%, var(--color-text));
 
     --font-sans: var(--font-poppins), system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-serif: var(--font-pt-serif), Georgia, "Times New Roman", serif;
@@ -44,15 +47,23 @@
     --radius-sm: 4px;
     --radius: 8px;
     --radius-lg: 16px;
-    --shadow-sm: 0 1px 2px rgb(29 26 24 / 0.06);
-    --shadow: 0 6px 24px -8px rgb(29 26 24 / 0.16);
-    --shadow-lg: 0 24px 60px -20px rgb(29 26 24 / 0.3);
+    --shadow-sm: 0 1px 2px light-dark(rgb(29 26 24 / 0.06), rgb(0 0 0 / 0.3));
+    --shadow: 0 6px 24px -8px light-dark(rgb(29 26 24 / 0.16), rgb(0 0 0 / 0.5));
+    --shadow-lg: 0 24px 60px -20px light-dark(rgb(29 26 24 / 0.3), rgb(0 0 0 / 0.7));
 
     --container: 1280px;
     --container-narrow: 760px;
     --gutter: clamp(1rem, 0.5rem + 2.5vw, 2.5rem);
     --header-height: 72px;
     --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  @media print {
+    :root {
+      color-scheme: light;
+    }
   }
 }
 
@@ -275,10 +286,34 @@
     }
   }
 
+  .card-list {
+    display: grid;
+    gap: var(--space-5);
+
+    & > .card {
+      max-width: none;
+      box-shadow: var(--shadow-sm);
+    }
+    & > .card > :first-child {
+      margin-top: 0;
+    }
+    & p:has(> img) {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+    & p:has(> img) > img {
+      flex: 0 1 auto;
+      min-width: 0;
+      height: auto;
+    }
+  }
+
   /* Buttons */
   .btn {
     --btn-bg: var(--color-text);
-    --btn-fg: #fff;
+    --btn-fg: var(--color-bg);
     --btn-border: var(--btn-bg);
     display: inline-flex;
     align-items: center;
@@ -322,7 +357,7 @@
       --btn-border: var(--color-border-strong);
       &:hover {
         --btn-bg: var(--color-text);
-        --btn-fg: #fff;
+        --btn-fg: var(--color-bg);
         --btn-border: var(--color-text);
       }
     }
@@ -407,7 +442,7 @@
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius);
-    background: #fff;
+    background: var(--color-field);
     font-weight: 400;
     transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
 
@@ -535,7 +570,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--space-5);
-    background: #fff;
+    background: var(--color-card);
   }
   .panel {
     background: var(--color-surface);

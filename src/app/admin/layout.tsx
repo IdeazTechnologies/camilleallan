@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/(site)/login/actions";
+import { ThemeToggle } from "@/components/site/ThemeToggle";
 import styles from "./admin.module.css";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
           <Link href="/" target="_blank">
             View store ↗
           </Link>
+          <ThemeToggle className={styles.themeToggle} withLabel />
           <form action={signOutAction}>
             <button type="submit">Sign out</button>
           </form>

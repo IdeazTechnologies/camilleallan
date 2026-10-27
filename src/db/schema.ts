@@ -50,6 +50,7 @@ export type BannerPlacement =
   | "thank_you"
   | "account";
 export type PollPlacement = "home" | "shop" | "gallery";
+export type PageLayout = "prose" | "cards";
 
 export type Address = {
   name: string;
@@ -408,6 +409,7 @@ export const pages = pgTable("pages", {
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   body: text("body").notNull().default(""),
+  layout: text("layout").$type<PageLayout>().notNull().default("prose"),
   metaDescription: text("meta_description"),
   published: boolean("published").notNull().default(true),
   showInNav: boolean("show_in_nav").notNull().default(false),

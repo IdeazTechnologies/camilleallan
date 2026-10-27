@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { markdownToText, renderMarkdown } from "@/lib/markdown";
+import { markdownToText, renderMarkdown, renderMarkdownSections } from "@/lib/markdown";
 import { isSafeRedirect, parseMoneyToCents, slugify } from "@/lib/utils";
+
+describe("renderMarkdownSections", () => {
+  it("splits on lines containing only dashes and drops empty sections", () => {
+    const sections = renderMarkdownSections("---\n**One**\n\ntext\n\n---\n\n  ----  \n\nTwo - not a - split\n---");
+    expect(sections).toHaveLength(2);
+    expect(sections[0]).toContain("<strong>One</strong>");
+    expect(sections[1]).toContain("Two - not a - split");
+  });
+
+  it("sanitizes each section", () => {
+    expect(renderMarkdownSections("<script>x</script>ok\n\n---\n\nnext").join("")).not.toContain("<script");
+  });
+});
 
 describe("renderMarkdown", () => {
   it("renders Markdown with line breaks", () => {

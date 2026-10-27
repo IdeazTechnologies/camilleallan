@@ -89,7 +89,7 @@
   padding-inline: 4px;
   border-radius: 999px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-bg);
   font-size: 0.65rem;
   font-weight: 600;
   display: grid;
@@ -101,6 +101,18 @@
   background: none;
   border: 0;
   cursor: pointer;
+}
+
+.themeButton {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 420px) {
+  .actions {
+    gap: 0;
+  }
 }
 
 .mobileMenu {

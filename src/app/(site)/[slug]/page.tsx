@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPage } from "@/lib/catalog";
-import { markdownToText, renderMarkdown } from "@/lib/markdown";
+import { markdownToText, renderMarkdown, renderMarkdownSections } from "@/lib/markdown";
 import { pageSlugs } from "@/lib/static-params";
 
 export const generateStaticParams = pageSlugs;
@@ -26,7 +26,15 @@ export default async function CmsPage({ params }: PageProps<"/[slug]">) {
       <header className="page-header centered">
         <h1>{page.title}</h1>
       </header>
-      <div className="prose" style={{ marginInline: "auto" }} dangerouslySetInnerHTML={{ __html: renderMarkdown(page.body) }} />
+      {page.layout === "cards" ? (
+        <div className="card-list">
+          {renderMarkdownSections(page.body).map((html, i) => (
+            <section key={i} className="card prose" dangerouslySetInnerHTML={{ __html: html }} />
+          ))}
+        </div>
+      ) : (
+        <div className="prose" style={{ marginInline: "auto" }} dangerouslySetInnerHTML={{ __html: renderMarkdown(page.body) }} />
+      )}
     </article>
   );
 }
