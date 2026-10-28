@@ -29,6 +29,13 @@
       "when": 1793153193332,
       "tag": "0003_page_nav_label",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793186984305,
+      "tag": "0004_password_auth",
+      "breakpoints": true
     }
   ]
 }

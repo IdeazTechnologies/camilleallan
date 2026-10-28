@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { newsletterSubscribers, orders, users } from "@/db/schema";
 import { requireUser } from "@/lib/dal";
 import { formatDate, formatMoney, ORDER_STATUS_LABELS } from "@/lib/utils";
-import { ProfileForm } from "./AccountForms";
+import { PasswordResetForm, ProfileForm } from "./AccountForms";
 import { AccountNav } from "./AccountNav";
 
 export const metadata: Metadata = { title: "My account", robots: { index: false } };
@@ -82,6 +82,12 @@ async function AccountContent({ searchParams }: { searchParams: PageProps<"/acco
         <section className="card stack">
           <h2 style={{ fontSize: "var(--step-2)" }}>Your details</h2>
           <ProfileForm name={profile?.name ?? ""} phone={profile?.phone ?? ""} subscribed={subscriber?.status === "subscribed"} />
+        </section>
+
+        <section className="card stack">
+          <h2 style={{ fontSize: "var(--step-2)" }}>Password</h2>
+          <p className="muted">We’ll email you a link to choose a new password. It expires in 15 minutes.</p>
+          <PasswordResetForm />
         </section>
       </div>
     </>

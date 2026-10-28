@@ -5,7 +5,7 @@ import { AddressFields } from "@/components/forms/AddressFields";
 import { FieldError, FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { initialActionState } from "@/lib/forms";
-import { addAddressAction, updateProfileAction } from "./actions";
+import { addAddressAction, sendPasswordResetAction, updateProfileAction } from "./actions";
 
 export function ProfileForm({ name, phone, subscribed }: { name: string; phone: string; subscribed: boolean }) {
   const [state, action] = useActionState(updateProfileAction, initialActionState);
@@ -30,6 +30,18 @@ export function ProfileForm({ name, phone, subscribed }: { name: string; phone: 
       </label>
       <div>
         <SubmitButton pendingLabel="Saving…">Save details</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+export function PasswordResetForm() {
+  const [state, action] = useActionState(sendPasswordResetAction, initialActionState);
+  return (
+    <form action={action} className="form">
+      <FormMessage state={state} />
+      <div>
+        <SubmitButton pendingLabel="Sending…">Email me a reset link</SubmitButton>
       </div>
     </form>
   );

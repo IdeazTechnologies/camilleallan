@@ -4,7 +4,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 export const { POST } = handlers;
 
-// Limit code guesses: the 6-digit sign-in code is checked on this callback URL.
+// Old magic-link callbacks land here. Password codes are checked in the login actions.
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   if (url.pathname.endsWith("/callback/email")) {
