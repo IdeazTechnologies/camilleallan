@@ -132,11 +132,12 @@ const STATIC_REDIRECTS: Record<string, string> = {
   "/press-2": "/press",
   "/for-sale": "/shop",
   "/interactive": "/",
-  "/faqs": "/contact",
+  "/faqs": "/faq",
   "/order-tracking": "/account",
   "/blog": "/",
   "/my-instagram-feed": "/",
   "/sample-page": "/",
+  "/elements/toggles-faqs": "/faq",
   "/elements/:path*": "/",
   "/home/:path*": "/",
 };

@@ -29,7 +29,7 @@ export async function savePageAction(_prev: ActionState, formData: FormData): Pr
     title,
     slug,
     body: String(formData.get("body") ?? ""),
-    layout: (formData.get("layout") === "cards" ? "cards" : "prose") as PageLayout,
+    layout: (["cards", "faq"].includes(String(formData.get("layout"))) ? formData.get("layout") : "prose") as PageLayout,
     metaDescription: String(formData.get("metaDescription") ?? "").trim() || null,
     published: checkbox(formData, "published"),
     showInNav: checkbox(formData, "showInNav"),

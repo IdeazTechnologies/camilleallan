@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markdownToText, renderMarkdown, renderMarkdownSections } from "@/lib/markdown";
+import { markdownToText, renderFaqItems, renderMarkdown, renderMarkdownSections } from "@/lib/markdown";
 import { isSafeRedirect, parseMoneyToCents, slugify } from "@/lib/utils";
 
 describe("renderMarkdownSections", () => {
@@ -12,6 +12,22 @@ describe("renderMarkdownSections", () => {
 
   it("sanitizes each section", () => {
     expect(renderMarkdownSections("<script>x</script>ok\n\n---\n\nnext").join("")).not.toContain("<script");
+  });
+});
+
+describe("renderFaqItems", () => {
+  it("uses each section's first line as the question and the rest as the answer", () => {
+    const items = renderFaqItems("## How do I **buy** one?\nSee the [shop](/shop).\n\n---\n\nQuestion only");
+    expect(items).toEqual([
+      { question: "How do I buy one?", answerHtml: '<p>See the <a href="/shop">shop</a>.</p>\n' },
+      { question: "Question only", answerHtml: "" },
+    ]);
+  });
+
+  it("strips markup from questions and sanitizes answers", () => {
+    const [item] = renderFaqItems('<img src=x onerror="alert(1)">Is it safe?\n<script>alert(1)</script>Yes');
+    expect(item.question).toBe("Is it safe?");
+    expect(item.answerHtml).not.toContain("<script");
   });
 });
 
@@ -35,6 +51,7 @@ describe("renderMarkdown", () => {
   it("produces plain text for meta descriptions", () => {
     expect(markdownToText("## Hello\n\n*sweet* baby")).toBe("Hello sweet baby");
     expect(markdownToText(null)).toBe("");
+    expect(markdownToText('Is the "Smell of Rain" true? Tom & Jerry\'s')).toBe('Is the "Smell of Rain" true? Tom & Jerry\'s');
   });
 });
 

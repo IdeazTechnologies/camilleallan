@@ -25,7 +25,7 @@
   },
   {
     "source": "/faqs",
-    "destination": "/contact"
+    "destination": "/faq"
   },
   {
     "source": "/order-tracking",
@@ -42,6 +42,10 @@
   {
     "source": "/sample-page",
     "destination": "/"
+  },
+  {
+    "source": "/elements/toggles-faqs",
+    "destination": "/faq"
   },
   {
     "source": "/elements/:path*",

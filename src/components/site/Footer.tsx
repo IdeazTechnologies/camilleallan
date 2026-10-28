@@ -52,7 +52,7 @@ export async function Footer() {
           <Link href="/account">My account</Link>
         </nav>
 
-        <div className="stack">
+        <div className="stack" id="newsletter">
           <p className="eyebrow">Newsletter</p>
           <p className="muted">New sculptures and studio news, a few times a year.</p>
           <NewsletterForm />
