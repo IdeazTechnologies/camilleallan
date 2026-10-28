@@ -30,7 +30,7 @@ export async function Header() {
   const links = [
     { href: "/shop", label: "Shop" },
     { href: "/gallery", label: "Gallery" },
-    ...navPages.map((p) => ({ href: `/${p.slug}`, label: p.title })),
+    ...navPages.map((p) => ({ href: `/${p.slug}`, label: p.label })),
     { href: "/contact", label: "Contact" },
   ];
 

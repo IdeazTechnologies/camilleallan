@@ -18,6 +18,7 @@ type Page = {
   metaDescription: string | null;
   published: boolean;
   showInNav: boolean;
+  navLabel: string | null;
   navOrder: number;
 };
 
@@ -97,6 +98,16 @@ export function PageForm({ page }: { page?: Page }) {
         <label className="check">
           <input type="checkbox" name="showInNav" defaultChecked={page?.showInNav ?? false} />
           Show in main menu
+        </label>
+        <label className="cluster" style={{ gap: "var(--space-2)" }}>
+          Menu label
+          <input
+            className="input"
+            name="navLabel"
+            defaultValue={state.values?.navLabel ?? page?.navLabel ?? ""}
+            placeholder="same as title"
+            style={{ width: 160, minHeight: 36 }}
+          />
         </label>
         <label className="cluster" style={{ gap: "var(--space-2)" }}>
           Menu order
