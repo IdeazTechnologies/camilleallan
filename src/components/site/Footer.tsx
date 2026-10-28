@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import monogram from "@/assets/ca-monogram.png";
 import { getPublishedPages } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
 import { FacebookIcon, InstagramIcon } from "./icons";
@@ -11,7 +13,10 @@ export async function Footer() {
     <footer className={styles.footer}>
       <div className={`container ${styles.grid}`}>
         <div className="stack">
-          <p className={styles.brand}>{settings.storeName}</p>
+          <p className={styles.brand}>
+            <Image src={monogram} alt="" className={styles.mark} sizes="80px" />
+            {settings.storeName}
+          </p>
           <p className="muted">{settings.tagline}</p>
           <div className="cluster">
             {settings.instagramHandle && (

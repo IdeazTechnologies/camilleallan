@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import monogram from "@/assets/ca-monogram.png";
 import { getNavPages } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
 import { getCartCount } from "@/lib/cart";
@@ -54,8 +56,11 @@ export async function Header() {
         </nav>
 
         <Link href="/" className={styles.logo}>
-          {settings.storeName}
-          <small>Dolls &amp; Sculptures</small>
+          <Image src={monogram} alt="" className={styles.mark} sizes="56px" priority />
+          <span>
+            {settings.storeName}
+            <small>Dolls &amp; Sculptures</small>
+          </span>
         </Link>
 
         <div className={styles.actions}>
@@ -90,6 +95,7 @@ export async function Header() {
           ×
         </button>
         <Link href="/" className={styles.logo} style={{ justifySelf: "start" }}>
+          <Image src={monogram} alt="" className={styles.mark} sizes="56px" />
           {settings.storeName}
         </Link>
         <nav aria-label="Mobile">
