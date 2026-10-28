@@ -106,8 +106,8 @@ const SKIP_PRODUCT_SLUGS = new Set(["test"]);
 const PAGE_IMPORTS = [
   {
     wpSlug: "about-v2",
-    slug: "about",
-    title: "About",
+    slug: "artist",
+    title: "Artist",
     metaDescription: "Camille Allen is a Vancouver-born artist known for her realistic miniature newborn baby sculptures.",
     showInNav: true,
     navOrder: 0,
@@ -126,9 +126,10 @@ const PAGE_IMPORTS = [
 
 // Old WordPress pages that were demo content or are replaced by built-in routes.
 const STATIC_REDIRECTS: Record<string, string> = {
-  "/about-v1": "/about",
-  "/about-v2": "/about",
-  "/about-v3": "/about",
+  "/about": "/artist",
+  "/about-v1": "/artist",
+  "/about-v2": "/artist",
+  "/about-v3": "/artist",
   "/press-2": "/press",
   "/for-sale": "/shop",
   "/interactive": "/",
