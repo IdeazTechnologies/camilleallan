@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ProductGrid } from "@/components/shop/ProductCard";
 import { SiteImage } from "@/components/SiteImage";
 import { Banners } from "@/components/site/Banners";
+import { FacebookFeed } from "@/components/site/FacebookFeed";
 import { InstagramFeed } from "@/components/site/InstagramFeed";
 import { Poll } from "@/components/site/Poll";
 import { getFeaturedProducts } from "@/lib/catalog";
@@ -73,6 +74,7 @@ export default async function HomePage() {
 
       <Poll placement="home" />
       <InstagramFeed />
+      <FacebookFeed />
     </>
   );
 }

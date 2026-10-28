@@ -59,3 +59,10 @@
   gap: var(--space-3);
   color: var(--color-muted);
 }
+
+.bottomLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-left: auto;
+}

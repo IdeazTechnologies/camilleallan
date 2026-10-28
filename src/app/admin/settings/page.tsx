@@ -4,18 +4,19 @@ import { AdminHeader } from "@/components/admin/ui";
 import { SiteImage } from "@/components/SiteImage";
 import { requireAdmin } from "@/lib/dal";
 import { emailTransport } from "@/lib/email/send";
+import { getFacebookToken } from "@/lib/facebook";
 import { getInstagramToken } from "@/lib/instagram";
 import { getPsigateConfig } from "@/lib/payments/psigate";
 import { readSettingsFresh } from "@/lib/settings";
 import { blobConfigured } from "@/lib/storage";
 import { uploadHeroImageAction } from "./actions";
-import { InstagramForm, StoreSettingsForm, TestEmailForm } from "./SettingsForms";
+import { FacebookForm, InstagramForm, StoreSettingsForm, TestEmailForm } from "./SettingsForms";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function AdminSettings() {
   const admin = await requireAdmin();
-  const [settings, instagram] = await Promise.all([readSettingsFresh(), getInstagramToken()]);
+  const [settings, instagram, facebook] = await Promise.all([readSettingsFresh(), getInstagramToken(), getFacebookToken()]);
   const psigate = getPsigateConfig();
   const transport = emailTransport();
 
@@ -39,6 +40,10 @@ export default async function AdminSettings() {
           <section className="card stack">
             <h2 style={{ fontSize: "var(--step-1)" }}>Instagram</h2>
             <InstagramForm connected={!!instagram} expiresAt={instagram?.expiresAt ?? null} />
+          </section>
+          <section className="card stack">
+            <h2 style={{ fontSize: "var(--step-1)" }}>Facebook</h2>
+            <FacebookForm connected={!!facebook} pageName={facebook?.pageName ?? null} />
           </section>
           <section className="card stack">
             <h2 style={{ fontSize: "var(--step-1)" }}>Email</h2>

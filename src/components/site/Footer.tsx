@@ -62,7 +62,12 @@ export async function Footer() {
         <p>
           © {settings.storeName}. {settings.footerText}
         </p>
-        {settings.contactEmail && <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>}
+        <div className={styles.bottomLinks}>
+          {settings.contactEmail && <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>}
+          <a href="https://ideaz.net" target="_blank" rel="noopener">
+            design by ideaz
+          </a>
+        </div>
       </div>
     </footer>
   );
