@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { PT_Serif, Poppins } from "next/font/google";
+import { Jost, PT_Serif, Poppins } from "next/font/google";
 import { getSettings } from "@/lib/settings";
 import { themeInitScript } from "@/lib/theme";
 import { appUrl } from "@/lib/utils";
@@ -20,6 +20,13 @@ const ptSerif = PT_Serif({
   display: "swap",
 });
 
+const jost = Jost({
+  variable: "--font-jost",
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
   return {
@@ -37,7 +44,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // The head script may switch data-theme before hydration.
-    <html lang="en" data-theme="dark" className={`${poppins.variable} ${ptSerif.variable}`} suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className={`${poppins.variable} ${ptSerif.variable} ${jost.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

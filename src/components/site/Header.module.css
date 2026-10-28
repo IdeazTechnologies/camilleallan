@@ -17,15 +17,18 @@
 
 .logo {
   justify-self: center;
-  font-family: var(--font-serif);
-  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.8rem);
-  letter-spacing: 0.04em;
+  font-family: var(--font-logo);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 1.15rem + 1vw, 1.85rem);
+  line-height: 1.15;
+  text-transform: lowercase;
   text-decoration: none;
   white-space: nowrap;
 
   & small {
     display: block;
     font-family: var(--font-sans);
+    font-weight: 400;
     font-size: 0.55rem;
     letter-spacing: 0.32em;
     text-transform: uppercase;

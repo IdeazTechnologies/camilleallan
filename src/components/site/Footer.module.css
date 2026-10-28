@@ -24,8 +24,10 @@
 }
 
 .brand {
-  font-family: var(--font-serif);
+  font-family: var(--font-logo);
+  font-weight: 600;
   font-size: var(--step-2);
+  text-transform: lowercase;
 }
 
 .social {
