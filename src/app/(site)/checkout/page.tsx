@@ -15,14 +15,7 @@ import { CheckoutForm } from "./CheckoutForm";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
-const NOTICES: Record<string, string> = {
-  declined: "Your payment was not approved and you have not been charged. Please check your card details and try again.",
-  cancelled: "Payment was cancelled. Your cart is still here when you're ready.",
-  error: "Something went wrong confirming your payment. If you were charged, please contact us before trying again.",
-};
-
-async function CheckoutContent({ searchParams }: { searchParams: PageProps<"/checkout">["searchParams"] }) {
-  const params = await searchParams;
+async function CheckoutContent() {
   await connection();
   const [cart, user, settings] = await Promise.all([getCart(), getCurrentUser(), readSettingsFresh()]);
   if (!cart || cart.lines.length === 0) redirect("/cart");
@@ -47,12 +40,10 @@ async function CheckoutContent({ searchParams }: { searchParams: PageProps<"/che
       : [],
   ]);
 
-  const notice = typeof params.payment === "string" ? NOTICES[params.payment] : null;
   const lines = cart.lines.filter((l) => l.available);
 
   return (
     <>
-      {notice && <p className="alert error" style={{ marginBottom: "var(--space-5)" }}>{notice}</p>}
       {!user && (
         <p className="muted" style={{ marginBottom: "var(--space-5)" }}>
           Have an account? <Link href="/login?next=/checkout">Sign in</Link> for faster checkout, or continue as a guest.
@@ -87,7 +78,7 @@ async function CheckoutContent({ searchParams }: { searchParams: PageProps<"/che
   );
 }
 
-export default function CheckoutPage({ searchParams }: PageProps<"/checkout">) {
+export default function CheckoutPage() {
   return (
     <div className="container" style={{ paddingBottom: "var(--space-8)" }}>
       <header className="page-header">
@@ -96,7 +87,7 @@ export default function CheckoutPage({ searchParams }: PageProps<"/checkout">) {
       <Banners placement="checkout" className="mt-4" />
       <div style={{ marginTop: "var(--space-5)" }}>
         <Suspense fallback={<div className="skeleton" style={{ height: 480 }} />}>
-          <CheckoutContent searchParams={searchParams} />
+          <CheckoutContent />
         </Suspense>
       </div>
     </div>

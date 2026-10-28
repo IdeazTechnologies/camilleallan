@@ -1,21 +1,19 @@
 import { centsToDecimal, decimalToCents } from "@/lib/pricing";
 
 /**
- * PSiGate integration:
- *  - New cards: browser POSTs to PSiGate's hosted page (Real-time HTML API). Card data never reaches us.
- *  - Confirmation: the browser return is untrusted, so every result is confirmed server-to-server with the
- *    Order Verification API before an order is marked paid.
- *  - Saved cards: recharge a previous PSiGate order with PreOrderID through the Real-time XML API.
+ * PSiGate integration (Real-time XML API, StoreID + Passphrase):
+ *  - New cards: the checkout form posts the card to our server action, which sends a Sale to PSiGate and
+ *    discards the card details. Card numbers, expiry and CVV are never stored, logged or echoed back.
+ *  - Saved cards: recharge a previous PSiGate order with PreOrderID.
+ *  - The Order Verification API is a fallback for orders whose charge outcome is unknown (e.g. a timeout).
  */
 
 export type PsigateMode = "test" | "live" | "simulate";
 
 export type PsigateConfig = {
   mode: PsigateMode;
-  storeKey: string;
   storeId: string;
   passphrase: string;
-  htmlUrl: string;
   xmlUrl: string;
   verifyUrl: string;
   savedCardsEnabled: boolean;
@@ -23,16 +21,17 @@ export type PsigateConfig = {
 
 const ENDPOINTS = {
   test: {
-    html: "https://stagingcheckout.psigate.com/HTMLPost/HTMLMessenger",
     xml: "https://realtimestaging.psigate.com/xml",
     verify: "https://realtimestaging.psigate.com/verify/json",
   },
   live: {
-    html: "https://checkout.psigate.com/HTMLPost/HTMLMessenger",
     xml: "https://realtime.psigate.com/xml",
     verify: "https://realtime.psigate.com/verify/json",
   },
 };
+
+/** In simulate mode, a card ending in this number is declined; any other valid card is approved. */
+export const SIMULATED_DECLINE_CARD = "4000000000000002";
 
 export function getPsigateConfig(env: Record<string, string | undefined> = process.env): PsigateConfig | null {
   const requested = (env.PSIGATE_MODE ?? "").toLowerCase();
@@ -40,31 +39,68 @@ export function getPsigateConfig(env: Record<string, string | undefined> = proce
     if (env.VERCEL_ENV === "production") return null;
     return {
       mode: "simulate",
-      storeKey: "simulator",
       storeId: "simulator",
       passphrase: "",
-      htmlUrl: "/checkout/simulator",
       xmlUrl: "",
       verifyUrl: "",
       savedCardsEnabled: env.PSIGATE_SAVED_CARDS === "true",
     };
   }
   const mode: PsigateMode = requested === "live" ? "live" : "test";
-  const storeKey = env.PSIGATE_STORE_KEY ?? "";
   const storeId = env.PSIGATE_STORE_ID ?? "";
   const passphrase = env.PSIGATE_PASSPHRASE ?? "";
-  if (!storeKey || !storeId || !passphrase) return null;
+  if (!storeId || !passphrase) return null;
   const e = ENDPOINTS[mode];
   return {
     mode,
-    storeKey,
     storeId,
     passphrase,
-    htmlUrl: env.PSIGATE_HTML_URL || e.html,
     xmlUrl: env.PSIGATE_XML_URL || e.xml,
     verifyUrl: env.PSIGATE_VERIFY_URL || e.verify,
     savedCardsEnabled: env.PSIGATE_SAVED_CARDS === "true",
   };
+}
+
+export type CardDetails = { number: string; expMonth: string; expYear: string; cvv: string };
+
+/** Card number by Luhn checksum; expiry as MM/YY or MM/YYYY and not in the past; 3–4 digit CVV. */
+export function parseCardInput(
+  raw: { number: string; expiry: string; cvv: string },
+  now = new Date(),
+): { ok: true; card: CardDetails } | { ok: false; errors: Record<string, string> } {
+  const errors: Record<string, string> = {};
+  const number = raw.number.replace(/[\s-]/g, "");
+  if (!/^\d{13,19}$/.test(number) || !luhn(number)) errors.cardNumber = "Please check your card number.";
+
+  const exp = raw.expiry.replace(/\s/g, "").match(/^(\d{1,2})\/?(\d{2}|\d{4})$/);
+  const month = exp ? Number(exp[1]) : 0;
+  const year = exp ? Number(exp[2].length === 4 ? exp[2] : `20${exp[2]}`) : 0;
+  if (!exp || month < 1 || month > 12) errors.cardExpiry = "Enter the expiry date as MM/YY.";
+  else if (year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1)) {
+    errors.cardExpiry = "This card has expired.";
+  }
+
+  const cvv = raw.cvv.trim();
+  if (!/^\d{3,4}$/.test(cvv)) errors.cardCvv = "Enter the 3 or 4 digit security code.";
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+  return {
+    ok: true,
+    card: { number, expMonth: String(month).padStart(2, "0"), expYear: String(year % 100).padStart(2, "0"), cvv },
+  };
+}
+
+function luhn(digits: string) {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) {
+    let d = Number(digits[digits.length - 1 - i]);
+    if (i % 2 === 1) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+  }
+  return sum % 10 === 0;
 }
 
 /** PSiGate OrderIDs must be unique per store, so each payment attempt gets a fresh one. */
@@ -73,89 +109,29 @@ export function newPsigateOrderId(orderNumber: number) {
   return `CA${orderNumber}-${suffix}`;
 }
 
-export type HostedPaymentInput = {
+export type BillingInfo = {
+  name: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  region: string;
+  postalCode: string;
+  country: string;
+  phone?: string | null;
+};
+
+export type SaleInput = {
   psigateOrderId: string;
   totalCents: number;
   orderNumber: number;
   email: string;
   customerIp?: string;
-  billing: {
-    name: string;
-    line1: string;
-    line2?: string | null;
-    city: string;
-    region: string;
-    postalCode: string;
-    country: string;
-    phone?: string | null;
-  };
-  thanksUrl: string;
-  noThanksUrl: string;
-};
+  billing?: BillingInfo;
+} & ({ card: CardDetails; preOrderId?: never } | { preOrderId: string; card?: never });
 
 /** Strips characters PSiGate rejects (e.g. "&") and trims to a field length. */
 function clean(value: string | null | undefined, max = 64) {
   return (value ?? "").replace(/[&<>"]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
-}
-
-export function buildHostedPaymentForm(config: PsigateConfig, input: HostedPaymentInput) {
-  const b = input.billing;
-  const fields: Record<string, string> = {
-    StoreKey: config.storeKey,
-    PaymentType: "CC",
-    CardAction: "0",
-    OrderID: input.psigateOrderId,
-    // The full amount (items + shipping + tax) is charged as SubTotal; the itemized breakdown lives on our order.
-    SubTotal: centsToDecimal(input.totalCents),
-    Comments: clean(`Camille Allen order #${input.orderNumber}`, 300),
-    CustomerRefNo: clean(String(input.orderNumber), 25),
-    Email: clean(input.email, 100),
-    Bname: clean(b.name),
-    Baddress1: clean(b.line1),
-    Baddress2: clean(b.line2),
-    Bcity: clean(b.city),
-    Bprovince: clean(b.region),
-    Bpostalcode: clean(b.postalCode, 16),
-    Bcountry: clean(b.country, 32),
-    Phone: clean(b.phone, 32),
-    CustomerLanguage: "EN",
-    ThanksURL: input.thanksUrl,
-    NoThanksURL: input.noThanksUrl,
-  };
-  if (input.customerIp && input.customerIp !== "unknown") fields.CustomerIP = input.customerIp.slice(0, 15);
-  for (const key of Object.keys(fields)) if (fields[key] === "") delete fields[key];
-  return { action: config.htmlUrl, fields };
-}
-
-/** Fields PSiGate posts (or appends) to ThanksURL/NoThanksURL. Treated as hints only. */
-export type HostedReturn = {
-  orderId: string | null;
-  approved: "APPROVED" | "DECLINED" | "ERROR" | null;
-  returnCode: string | null;
-  errMsg: string | null;
-  transRef: string | null;
-  fullTotalCents: number | null;
-  cardNumber: string | null;
-  cardType: string | null;
-};
-
-export function parseHostedReturn(params: URLSearchParams | FormData): HostedReturn {
-  const get = (k: string) => {
-    const v = params.get(k);
-    return typeof v === "string" && v !== "" ? v : null;
-  };
-  const approvedRaw = get("Approved")?.toUpperCase() ?? null;
-  return {
-    orderId: get("OrderID"),
-    approved:
-      approvedRaw === "APPROVED" || approvedRaw === "DECLINED" || approvedRaw === "ERROR" ? approvedRaw : null,
-    returnCode: get("ReturnCode"),
-    errMsg: get("ErrMsg"),
-    transRef: get("TransRefNumber"),
-    fullTotalCents: decimalToCents(get("FullTotal")),
-    cardNumber: get("CardNumber"),
-    cardType: get("CardType"),
-  };
 }
 
 export type VerificationResult = {
@@ -278,59 +254,109 @@ function xmlEscape(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function buildSavedCardSaleXml(
-  config: PsigateConfig,
-  input: { psigateOrderId: string; preOrderId: string; totalCents: number; email: string; orderNumber: number },
-) {
-  const el = (name: string, value: string) => `<${name}>${xmlEscape(value)}</${name}>`;
+/** Sale (CardAction 0) for the full order total, with either new card details or a PreOrderID. */
+export function buildSaleXml(config: PsigateConfig, input: SaleInput) {
+  const el = (name: string, value: string | null | undefined) => (value ? `<${name}>${xmlEscape(value)}</${name}>` : "");
+  const b = input.billing;
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     "<Order>",
     el("StoreID", config.storeId),
     el("Passphrase", config.passphrase),
     el("OrderID", input.psigateOrderId),
-    el("PreOrderID", input.preOrderId),
-    el("SubTotal", centsToDecimal(input.totalCents)),
+    // The full amount (items + shipping + tax) is charged as Subtotal; the itemized breakdown lives on our order.
+    el("Subtotal", centsToDecimal(input.totalCents)),
     el("PaymentType", "CC"),
     el("CardAction", "0"),
+    input.card
+      ? [
+          el("CardNumber", input.card.number),
+          el("CardExpMonth", input.card.expMonth),
+          el("CardExpYear", input.card.expYear),
+          el("CardIDNumber", input.card.cvv),
+        ].join("")
+      : el("PreOrderID", input.preOrderId),
     el("Email", clean(input.email, 100)),
-    el("Comments", `Camille Allen order #${input.orderNumber} (saved card)`),
+    el("Comments", clean(`Camille Allen order #${input.orderNumber}${input.preOrderId ? " (saved card)" : ""}`, 300)),
+    b
+      ? [
+          el("Bname", clean(b.name)),
+          el("Baddress1", clean(b.line1)),
+          el("Baddress2", clean(b.line2)),
+          el("Bcity", clean(b.city)),
+          el("Bprovince", clean(b.region)),
+          el("Bpostalcode", clean(b.postalCode, 16)),
+          el("Bcountry", clean(b.country, 32)),
+          el("Phone", clean(b.phone, 32)),
+        ].join("")
+      : "",
+    input.customerIp && input.customerIp !== "unknown" ? el("CustomerIP", input.customerIp.slice(0, 15)) : "",
     "</Order>",
   ].join("");
 }
 
 export function parseXmlResult(xml: string) {
-  const tag = (name: string) => xml.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1]?.trim() ?? null;
+  const tag = (name: string) => xml.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1]?.trim() || null;
   return {
     orderId: tag("OrderID"),
-    approved: tag("Approved"),
+    approved: tag("Approved")?.toUpperCase() ?? null,
     returnCode: tag("ReturnCode"),
     errMsg: tag("ErrMsg"),
     transRef: tag("TransRefNumber"),
     fullTotalCents: decimalToCents(tag("FullTotal")),
+    cardNumber: tag("CardNumber"),
+    cardType: tag("CardType"),
   };
 }
 
-/** Charges a saved card (PreOrderID). The caller must still confirm with verifyPayment. */
-export async function chargeSavedCard(
-  config: PsigateConfig,
-  input: { psigateOrderId: string; preOrderId: string; totalCents: number; email: string; orderNumber: number },
-) {
+/**
+ * approved/declined are definitive answers from PSiGate. "unknown" means we never got a readable answer
+ * (timeout, network or server error), so the card may or may not have been charged.
+ */
+export type ChargeResult =
+  | { outcome: "approved"; transRef: string | null; cardType: string | null; last4: string | null; amountCents: number | null }
+  | { outcome: "declined"; message: string }
+  | { outcome: "unknown"; message: string };
+
+export async function chargeCard(config: PsigateConfig, input: SaleInput): Promise<ChargeResult> {
   if (config.mode === "simulate") {
-    return { approved: true, error: null as string | null };
+    if (input.card?.number === SIMULATED_DECLINE_CARD) return { outcome: "declined", message: "Simulated decline" };
+    return {
+      outcome: "approved",
+      transRef: `SIM-${input.psigateOrderId}`,
+      cardType: input.card ? "VISA" : null,
+      last4: input.card ? input.card.number.slice(-4) : null,
+      amountCents: input.totalCents,
+    };
   }
+
+  let res: Response;
+  let body: string;
   try {
-    const res = await fetch(config.xmlUrl, {
+    res = await fetch(config.xmlUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/xml" },
-      body: buildSavedCardSaleXml(config, input),
-      signal: AbortSignal.timeout(30_000),
+      headers: { "Content-Type": "application/xml", Accept: "application/xml" },
+      body: buildSaleXml(config, input),
+      signal: AbortSignal.timeout(45_000),
       cache: "no-store",
     });
-    const result = parseXmlResult(await res.text());
-    if (result.approved === "APPROVED") return { approved: true, error: null };
-    return { approved: false, error: result.errMsg ?? result.returnCode ?? `HTTP ${res.status}` };
+    body = await res.text();
   } catch (err) {
-    return { approved: false, error: err instanceof Error ? err.message : String(err) };
+    return { outcome: "unknown", message: err instanceof Error ? err.message : String(err) };
   }
+
+  const result = parseXmlResult(body);
+  if (result.approved === "APPROVED") {
+    return {
+      outcome: "approved",
+      transRef: result.transRef,
+      cardType: result.cardType,
+      last4: last4Of(result.cardNumber) ?? (input.card ? input.card.number.slice(-4) : null),
+      amountCents: result.fullTotalCents,
+    };
+  }
+  if (result.approved === "DECLINED" || result.approved === "ERROR") {
+    return { outcome: "declined", message: result.errMsg ?? result.returnCode ?? result.approved };
+  }
+  return { outcome: "unknown", message: `Unexpected PSiGate response (HTTP ${res.status})` };
 }

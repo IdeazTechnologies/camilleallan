@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { AddressFields } from "@/components/forms/AddressFields";
 import { FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
@@ -34,7 +34,6 @@ export function CheckoutForm(props: Props) {
   const [billingSame, setBillingSame] = useState(true);
   const [shippingRuleId, setShippingRuleId] = useState<string | null>(null);
   const [cardChoice, setCardChoice] = useState(props.savedCards[0]?.id ?? "new");
-  const redirectRef = useRef<HTMLFormElement>(null);
 
   const itemCount = props.lines.reduce((n, l) => n + l.quantity, 0);
   const options = useMemo(
@@ -44,26 +43,6 @@ export function CheckoutForm(props: Props) {
   const selected = options.find((o) => o.id === shippingRuleId) ?? options[0] ?? null;
   const totals = computeTotals(props.lines, selected?.costCents ?? 0, props.tax);
   const money = (c: number) => formatMoney(c, props.currency);
-
-  useEffect(() => {
-    if (state.redirectForm) redirectRef.current?.submit();
-  }, [state.redirectForm]);
-
-  if (state.redirectForm) {
-    return (
-      <div className="card stack text-center" style={{ justifyItems: "center" }}>
-        <p className="lede">Taking you to our secure payment page…</p>
-        <form ref={redirectRef} action={state.redirectForm.action} method={state.redirectForm.method}>
-          {Object.entries(state.redirectForm.fields).map(([k, v]) => (
-            <input key={k} type="hidden" name={k} value={v} />
-          ))}
-          <button type="submit" className="btn">
-            Continue to payment
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <form action={action} className="checkout-grid" noValidate>
@@ -151,11 +130,56 @@ export function CheckoutForm(props: Props) {
             </div>
           )}
           {cardChoice === "new" && (
-            <p className="muted">
-              You&apos;ll enter your card details on PSiGate&apos;s secure payment page. We never see or store your full card
-              number.
-              {props.simulate && <strong> (Test mode: payments are simulated.)</strong>}
-            </p>
+            <div className="stack stack-sm">
+              <div className="field">
+                <label htmlFor="cardNumber">Card number</label>
+                <input
+                  id="cardNumber"
+                  name="cardNumber"
+                  inputMode="numeric"
+                  autoComplete="cc-number"
+                  maxLength={23}
+                  required
+                  aria-invalid={!!state.errors?.cardNumber || undefined}
+                />
+                {state.errors?.cardNumber && <span className="error">{state.errors.cardNumber}</span>}
+              </div>
+              <div className="form-row">
+                <div className="field">
+                  <label htmlFor="cardExpiry">Expiry (MM/YY)</label>
+                  <input
+                    id="cardExpiry"
+                    name="cardExpiry"
+                    inputMode="numeric"
+                    autoComplete="cc-exp"
+                    placeholder="MM/YY"
+                    maxLength={7}
+                    required
+                    aria-invalid={!!state.errors?.cardExpiry || undefined}
+                  />
+                  {state.errors?.cardExpiry && <span className="error">{state.errors.cardExpiry}</span>}
+                </div>
+                <div className="field">
+                  <label htmlFor="cardCvv">Security code (CVV)</label>
+                  <input
+                    id="cardCvv"
+                    name="cardCvv"
+                    inputMode="numeric"
+                    autoComplete="cc-csc"
+                    maxLength={4}
+                    required
+                    aria-invalid={!!state.errors?.cardCvv || undefined}
+                  />
+                  {state.errors?.cardCvv && <span className="error">{state.errors.cardCvv}</span>}
+                </div>
+              </div>
+              <p className="muted" style={{ fontSize: "var(--step--1)" }}>
+                Your card is charged securely through PSiGate. We never store your card number or security code.
+                {props.simulate && (
+                  <strong> Test mode: no real charge. Use 4111 1111 1111 1111 to approve or 4000 0000 0000 0002 to decline.</strong>
+                )}
+              </p>
+            </div>
           )}
           {cardChoice === "new" && props.canSaveCard && (
             <label className="check">
@@ -211,12 +235,9 @@ export function CheckoutForm(props: Props) {
             </dd>
           </div>
         </dl>
-        <SubmitButton className="btn-block btn-accent" pendingLabel="Placing order…" disabled={options.length === 0}>
-          {cardChoice === "new" ? "Continue to payment" : `Pay ${money(totals.totalCents)}`}
+        <SubmitButton className="btn-block btn-accent" pendingLabel="Processing payment…" disabled={options.length === 0}>
+          {`Pay ${money(totals.totalCents)}`}
         </SubmitButton>
-        <p className="muted" style={{ fontSize: "var(--step--1)" }}>
-          Items are reserved for 30 minutes while you complete payment.
-        </p>
       </aside>
     </form>
   );

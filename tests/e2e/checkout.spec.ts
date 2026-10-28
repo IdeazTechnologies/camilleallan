@@ -72,12 +72,12 @@ test("customer buys a piece and the admin ships it", async ({ page, browser }) =
   await page.getByLabel("State / Province").fill("WA");
   await page.getByLabel("ZIP / Postal code").fill("98101");
   await expect(page.getByRole("radio", { name: /Free shipping/ })).toBeChecked();
-  await page.getByRole("button", { name: "Continue to payment" }).click();
 
-  // The payment simulator stands in for PSiGate's hosted page.
-  await expect(page.getByRole("heading", { name: "Secure payment" })).toBeVisible();
-  await expect(page.getByText("$42.00")).toBeVisible();
-  await page.getByRole("button", { name: "Approve payment" }).click();
+  // PSIGATE_MODE=simulate: this test card is approved without contacting PSiGate.
+  await page.getByLabel("Card number").fill("4111 1111 1111 1111");
+  await page.getByLabel("Expiry (MM/YY)").fill("12/30");
+  await page.getByLabel("Security code (CVV)").fill("123");
+  await page.getByRole("button", { name: "Pay $42.00" }).click();
 
   await expect(page.getByRole("heading", { name: "Thank you for your order!" })).toBeVisible();
   const { rows: orders } = await pool.query(`select id, number, status, total_cents from orders where email = $1`, [buyerEmail]);
