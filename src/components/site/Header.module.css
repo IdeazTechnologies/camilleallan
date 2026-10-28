@@ -17,6 +17,9 @@
 
 .logo {
   justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   font-family: var(--font-logo);
   font-weight: 600;
   font-size: clamp(1.65rem, 1.3rem + 1.4vw, 2.3rem);
@@ -35,6 +38,17 @@
     text-align: center;
     color: var(--color-muted);
     margin-top: -0.15rem;
+  }
+}
+
+.mark {
+  width: auto;
+  height: clamp(40px, 1.9em, 56px);
+
+  @media (max-width: 440px) {
+    .inner & {
+      display: none;
+    }
   }
 }
 
