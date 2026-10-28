@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ImagePlaceholder, SiteImage } from "@/components/SiteImage";
+import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import { Poll } from "@/components/site/Poll";
-import { getGalleryAlbums } from "@/lib/catalog";
-import styles from "./gallery.module.css";
+import { getAllGalleryImages } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Gallery",
@@ -12,42 +10,22 @@ export const metadata: Metadata = {
 };
 
 export default async function GalleryPage() {
-  const albums = await getGalleryAlbums();
+  const images = await getAllGalleryImages();
   return (
     <>
-      <div className="container">
+      <div className="container" style={{ paddingBottom: "var(--space-7)" }}>
         <header className="page-header centered">
           <p className="eyebrow">Gallery</p>
           <h1>Past work</h1>
           <p className="lede">A look back at sculptures and dolls that have already found their families.</p>
         </header>
 
-        {albums.length === 0 ? (
+        {images.length === 0 ? (
           <p className="empty-state">The gallery is being curated. Please check back soon.</p>
         ) : (
-          <ul className={styles.albums}>
-            {albums.map((album, i) => (
-              <li key={album.id}>
-                <Link href={`/gallery/${album.slug}`} className={styles.album}>
-                  <span className={styles.cover}>
-                    {album.images[0] ? (
-                      <SiteImage
-                        src={album.images[0].url}
-                        alt={album.images[0].alt ?? album.title}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 33vw"
-                        priority={i < 3}
-                      />
-                    ) : (
-                      <ImagePlaceholder label={album.title} />
-                    )}
-                  </span>
-                  <span className={styles.albumTitle}>{album.title}</span>
-                  {album.description && <span className="muted">{album.description}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <GalleryGrid
+            images={images.map((i) => ({ url: i.url, alt: i.alt, caption: i.caption, width: i.width, height: i.height }))}
+          />
         )}
       </div>
       <Poll placement="gallery" />

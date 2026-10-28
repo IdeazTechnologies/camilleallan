@@ -116,7 +116,8 @@ const PAGE_IMPORTS = [
   {
     wpSlug: "press-2",
     slug: "press",
-    title: "Press",
+    title: "In The News",
+    navLabel: "Press",
     metaDescription: "Camille Allen's baby sculptures in the news, magazines and on television.",
     showInNav: true,
     navOrder: 10,
@@ -512,6 +513,7 @@ async function migratePages(db: ScriptDb, rehost: ReturnType<typeof createImageR
       metaDescription: spec.metaDescription,
       published: true,
       showInNav: spec.showInNav,
+      navLabel: "navLabel" in spec ? spec.navLabel : null,
       navOrder: spec.navOrder,
     });
     console.log(`  page: /${spec.slug} (${rehosted.size} images)`);

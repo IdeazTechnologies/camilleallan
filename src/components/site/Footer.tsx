@@ -45,7 +45,7 @@ export async function Footer() {
           <p className="eyebrow">Information</p>
           {pages.map((p) => (
             <Link key={p.slug} href={`/${p.slug}`}>
-              {p.title}
+              {p.label}
             </Link>
           ))}
           <Link href="/contact">Contact</Link>

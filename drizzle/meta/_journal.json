@@ -22,6 +22,13 @@
       "when": 1793142620885,
       "tag": "0002_page_layout",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793153193332,
+      "tag": "0003_page_nav_label",
+      "breakpoints": true
     }
   ]
 }

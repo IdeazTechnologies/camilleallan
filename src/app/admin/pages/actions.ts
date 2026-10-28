@@ -33,6 +33,7 @@ export async function savePageAction(_prev: ActionState, formData: FormData): Pr
     metaDescription: String(formData.get("metaDescription") ?? "").trim() || null,
     published: checkbox(formData, "published"),
     showInNav: checkbox(formData, "showInNav"),
+    navLabel: String(formData.get("navLabel") ?? "").trim() || null,
     navOrder: Number.parseInt(String(formData.get("navOrder") ?? "0"), 10) || 0,
   };
   let pageId = id;

@@ -413,6 +413,8 @@ export const pages = pgTable("pages", {
   metaDescription: text("meta_description"),
   published: boolean("published").notNull().default(true),
   showInNav: boolean("show_in_nav").notNull().default(false),
+  /** Shorter name for menus; falls back to the title. */
+  navLabel: text("nav_label"),
   navOrder: integer("nav_order").notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

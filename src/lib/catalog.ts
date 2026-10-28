@@ -150,6 +150,18 @@ export async function getGalleryAlbums() {
   });
 }
 
+export async function getAllGalleryImages() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(TAGS.gallery);
+  const albums = await db.query.galleryAlbums.findMany({
+    where: eq(galleryAlbums.published, true),
+    orderBy: [asc(galleryAlbums.sortOrder), desc(galleryAlbums.createdAt)],
+    with: { images: { orderBy: [asc(galleryImages.sortOrder), asc(galleryImages.createdAt)] } },
+  });
+  return albums.flatMap((album) => album.images);
+}
+
 export async function getGalleryAlbum(slug: string) {
   "use cache";
   cacheLife("hours");
@@ -166,22 +178,24 @@ export async function getNavPages() {
   "use cache";
   cacheLife("days");
   cacheTag(TAGS.pages);
-  return db.query.pages.findMany({
+  const rows = await db.query.pages.findMany({
     where: and(eq(pages.published, true), eq(pages.showInNav, true)),
     orderBy: [asc(pages.navOrder), asc(pages.title)],
-    columns: { slug: true, title: true },
+    columns: { slug: true, title: true, navLabel: true },
   });
+  return rows.map((p) => ({ slug: p.slug, label: p.navLabel || p.title }));
 }
 
 export async function getPublishedPages() {
   "use cache";
   cacheLife("days");
   cacheTag(TAGS.pages);
-  return db.query.pages.findMany({
+  const rows = await db.query.pages.findMany({
     where: eq(pages.published, true),
     orderBy: [asc(pages.navOrder), asc(pages.title)],
-    columns: { slug: true, title: true, updatedAt: true },
+    columns: { slug: true, title: true, navLabel: true, updatedAt: true },
   });
+  return rows.map((p) => ({ slug: p.slug, label: p.navLabel || p.title, updatedAt: p.updatedAt }));
 }
 
 export async function getPage(slug: string) {
