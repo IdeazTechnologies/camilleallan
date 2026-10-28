@@ -1,6 +1,7 @@
 import { config } from "dotenv";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { Pool } from "pg";
+import { hashPassword } from "../../src/lib/password";
 
 config({ path: ".env.local", quiet: true });
 
@@ -9,6 +10,7 @@ const productSlug = `e2e-doll-${run}`;
 const buyerEmail = `e2e-buyer-${run}@example.com`;
 const adminEmail = `e2e-admin-${run}@example.com`;
 const PRICE_CENTS = 4200;
+const ADMIN_PASSWORD = "e2e-password-1";
 
 let pool: Pool;
 let productId: string;
@@ -21,7 +23,12 @@ test.beforeAll(async () => {
      values ($1, $2, 'E2E Test Doll', 'Created by the end-to-end test', $3, 3, false, 'published')`,
     [productId, productSlug, PRICE_CENTS],
   );
-  await pool.query(`insert into users (id, email, role) values ($1, $2, 'admin')`, [crypto.randomUUID(), adminEmail]);
+  const passwordHash = await hashPassword(ADMIN_PASSWORD);
+  await pool.query(`insert into users (id, email, role, password_hash) values ($1, $2, 'admin', $3)`, [
+    crypto.randomUUID(),
+    adminEmail,
+    passwordHash,
+  ]);
 });
 
 test.afterAll(async () => {
@@ -35,6 +42,7 @@ test.afterAll(async () => {
   await pool.query(`delete from newsletter_subscribers where email = $1`, [buyerEmail]);
   await pool.query(`delete from products where id = $1`, [productId]);
   await pool.query(`delete from carts c where not exists (select 1 from cart_items i where i.cart_id = c.id) and c.created_at > now() - interval '1 hour' and c.user_id is null`);
+  await pool.query(`delete from auth_challenges where email = any($1)`, [emails]);
   await pool.query(`delete from verification_tokens where identifier = any($1)`, [emails]);
   await pool.query(`delete from email_log where "to" = any($1)`, [emails]);
   await pool.query(`delete from users where email = any($1)`, [emails]);
@@ -51,9 +59,14 @@ async function latestLoginCode(email: string) {
   throw new Error(`No sign-in email for ${email}`);
 }
 
+async function acceptCookies(target: Page) {
+  await target.getByRole("button", { name: "Accept" }).click();
+}
+
 test("customer buys a piece and the admin ships it", async ({ page, browser }) => {
   // Browse and add to cart.
   await page.goto(`/product/${productSlug}`);
+  await acceptCookies(page);
   await expect(page.getByRole("heading", { name: "E2E Test Doll" })).toBeVisible();
   await page.getByRole("button", { name: "Add to cart" }).click();
   await expect(page.getByRole("link", { name: /View cart/ })).toBeVisible();
@@ -92,13 +105,16 @@ test("customer buys a piece and the admin ships it", async ({ page, browser }) =
   // Admin signs in with an emailed code and ships the order.
   const admin = await (await browser.newContext()).newPage();
   await admin.goto(`/login?next=/admin/orders/${orders[0].id}`);
+  await acceptCookies(admin);
   await admin.getByRole("main").getByLabel("Email address").fill(adminEmail);
   // Forms reject submissions made within 2 seconds of loading (bot protection).
   await admin.waitForTimeout(2_500);
-  await admin.getByRole("button", { name: "Email me a sign-in code" }).click();
+  await admin.getByRole("button", { name: "Continue" }).click();
+  await admin.getByLabel("Password").fill(ADMIN_PASSWORD);
+  await admin.getByRole("button", { name: "Sign in" }).click();
   await expect(admin.getByLabel("6-digit code")).toBeVisible();
   await admin.getByLabel("6-digit code").fill(await latestLoginCode(adminEmail));
-  await admin.getByRole("button", { name: "Sign in" }).click();
+  await admin.getByRole("button", { name: "Confirm" }).click();
 
   await expect(admin).toHaveURL(new RegExp(`/admin/orders/${orders[0].id}`));
   await admin.getByLabel("Change status to").selectOption("shipped");

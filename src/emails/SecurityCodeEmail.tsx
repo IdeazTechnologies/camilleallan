@@ -1,11 +1,23 @@
 import { Button, Section, Text } from "@react-email/components";
 import { EmailLayout, colors, styles } from "./EmailLayout";
 
-export default function LoginEmail({ url, code }: { url: string; code: string }) {
+export default function SecurityCodeEmail({
+  url,
+  code,
+  heading,
+  body,
+  buttonLabel,
+}: {
+  url: string;
+  code: string;
+  heading: string;
+  body: string;
+  buttonLabel: string;
+}) {
   return (
-    <EmailLayout preview={`Your sign-in code is ${code}`}>
-      <Text style={styles.h1}>Sign in to Camille Allen</Text>
-      <Text style={styles.p}>Click the button below to sign in, or enter this code on the sign-in page:</Text>
+    <EmailLayout preview={`${heading} Your code is ${code}`}>
+      <Text style={styles.h1}>{heading}</Text>
+      <Text style={styles.p}>{body}</Text>
       <Section
         style={{
           textAlign: "center",
@@ -30,12 +42,10 @@ export default function LoginEmail({ url, code }: { url: string; code: string })
       </Section>
       <Section style={{ textAlign: "center", margin: "8px 0 20px" }}>
         <Button href={url} style={styles.button}>
-          Sign in
+          {buttonLabel}
         </Button>
       </Section>
-      <Text style={styles.muted}>
-        This code expires in 15 minutes. If you didn&apos;t ask to sign in, you can ignore this email.
-      </Text>
+      <Text style={styles.muted}>This code expires in 15 minutes. If you did not ask for it, you can ignore this email.</Text>
     </EmailLayout>
   );
 }

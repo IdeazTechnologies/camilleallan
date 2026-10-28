@@ -6,9 +6,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { addresses, savedCards, users } from "@/db/schema";
 import { parseAddress } from "@/lib/address";
+import { issueChallenge } from "@/lib/auth-challenges";
 import { requireUser } from "@/lib/dal";
 import { checkbox, formValues, zodErrors, type ActionState } from "@/lib/forms";
 import { setSubscriptionForUser } from "@/lib/newsletter";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const profileSchema = z.object({
   name: z.string().trim().max(100),
@@ -26,6 +28,18 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   await setSubscriptionForUser(user.id, user.email, checkbox(formData, "newsletter"));
   refresh();
   return { ok: true, message: "Your details have been saved." };
+}
+
+export async function sendPasswordResetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (String(formData.get("website") ?? "") !== "") return { ok: false, message: "Submission rejected." };
+  const user = await requireUser("/account");
+  const ip = await clientIp();
+  const allowed =
+    (await rateLimit(`auth-reset:${user.email}`, 5, 15 * 60)) && (await rateLimit(`auth-ip:${ip}`, 40, 15 * 60));
+  if (!allowed) return { ok: false, message: "Too many attempts. Please wait a few minutes and try again." };
+  const sent = await issueChallenge({ purpose: "reset", email: user.email, next: "/account", payload: { userId: user.id } });
+  if (!sent.ok) return { ok: false, message: sent.message };
+  return { ok: true, message: `We sent a link to ${user.email}. It expires in 15 minutes.` };
 }
 
 export async function addAddressAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

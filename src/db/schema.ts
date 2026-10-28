@@ -73,6 +73,7 @@ export const users = pgTable("users", {
   image: text("image"),
   role: text("role").$type<Role>().notNull().default("customer"),
   phone: text("phone"),
+  passwordHash: text("password_hash"),
   createdAt: createdAt(),
 });
 
@@ -112,6 +113,52 @@ export const verificationTokens = pgTable(
     expires: timestamp("expires", { mode: "date" }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
+);
+
+/* ----------------------- Password sign-in & devices ----------------------- */
+
+export type AuthChallengePurpose = "login" | "signup" | "reset";
+
+export type AuthChallengePayload = {
+  name?: string;
+  passwordHash?: string;
+  userId?: string;
+};
+
+/** Single-use emailed codes for a new device, a new account, or a password reset. */
+export const authChallenges = pgTable(
+  "auth_challenges",
+  {
+    id: id(),
+    purpose: text("purpose").$type<AuthChallengePurpose>().notNull(),
+    email: text("email").notNull(),
+    codeHash: text("code_hash").notNull(),
+    payload: jsonb("payload").$type<AuthChallengePayload>(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("auth_challenges_email_idx").on(t.email, t.purpose)],
+);
+
+/**
+ * A browser that has already confirmed a sign-in. The cookie holds a random id;
+ * only the hash is stored, so a database copy cannot impersonate the browser.
+ */
+export const trustedDevices = pgTable(
+  "trusted_devices",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp("last_used_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("trusted_devices_user_token_idx").on(t.userId, t.tokenHash),
+    index("trusted_devices_user_idx").on(t.userId),
+  ],
 );
 
 /* -------------------------------- Customers ------------------------------- */

@@ -12,7 +12,7 @@ site with a Next.js app on Vercel, backed by Neon Postgres.
 - **Payments**: card form on the checkout page, charged server-to-server through PSiGate's Real-time XML API (the same
   StoreID + Passphrase setup the old WooCommerce site used). Card details are never stored. Saved cards can be enabled
   once PSiGate allows PreOrderID recharges.
-- **Accounts**: passwordless sign-in with an emailed 6-digit code or link, plus order history, addresses, saved cards
+- **Accounts**: password sign-in. The session is a cookie that expires after 24 hours. A new browser also confirms with an emailed code; a remembered device skips that step. Password reset, order history, addresses, and saved cards
   and newsletter preferences.
 - **Admin** (`/admin`): products and images, categories, orders (status, tracking, packing slips, notes),
   customers, gallery, shipping rules, banners, pages, polls, contact messages, newsletter campaigns, email log and

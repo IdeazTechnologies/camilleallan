@@ -1,14 +1,9 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { and, eq, isNull } from "drizzle-orm";
 import NextAuth, { type DefaultSession } from "next-auth";
-import type { EmailConfig } from "next-auth/providers/email";
-import { randomInt } from "node:crypto";
-import { createElement } from "react";
 import { getDb } from "@/db";
-import { accounts, orders, sessions, users, verificationTokens, type Role } from "@/db/schema";
-import LoginEmail from "@/emails/LoginEmail";
-import { sendEmail } from "@/lib/email/send";
-import { normalizeEmail } from "@/lib/utils";
+import { accounts, sessions, users, verificationTokens, type Role } from "@/db/schema";
+import { SESSION_MAX_AGE_SECONDS } from "@/lib/session";
+import { finalizeNewUser, promoteIfAdmin } from "@/lib/users";
 
 declare module "next-auth" {
   interface Session {
@@ -19,43 +14,6 @@ declare module "next-auth" {
   }
 }
 
-export const LOGIN_CODE_TTL_SECONDS = 15 * 60;
-
-function adminEmails() {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => normalizeEmail(e))
-    .filter(Boolean);
-}
-
-async function promoteIfAdmin(userId: string | undefined, email: string | null | undefined) {
-  if (!userId || !email || !adminEmails().includes(normalizeEmail(email))) return;
-  await getDb().update(users).set({ role: "admin" }).where(eq(users.id, userId));
-}
-
-const emailProvider: EmailConfig = {
-  id: "email",
-  type: "email",
-  name: "Email",
-  maxAge: LOGIN_CODE_TTL_SECONDS,
-  // A 6-digit code doubles as the magic-link token so customers can type it or click the link.
-  generateVerificationToken: () => randomInt(0, 1_000_000).toString().padStart(6, "0"),
-  normalizeIdentifier: (identifier) => {
-    const email = normalizeEmail(identifier);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Invalid email address");
-    return email;
-  },
-  async sendVerificationRequest({ identifier, url, token }) {
-    const result = await sendEmail({
-      to: identifier,
-      subject: `Your Camille Allen sign-in code: ${token}`,
-      template: "login",
-      react: createElement(LoginEmail, { url, code: token }),
-    });
-    if (!result.ok) throw new Error("Could not send the sign-in email");
-  },
-};
-
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const db = getDb();
   return {
@@ -65,10 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
       sessionsTable: sessions,
       verificationTokensTable: verificationTokens,
     }),
-    session: { strategy: "database", maxAge: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
+    // The session cookie is the login token. updateAge matches maxAge, so a visit does not extend it.
+    session: { strategy: "database", maxAge: SESSION_MAX_AGE_SECONDS, updateAge: SESSION_MAX_AGE_SECONDS },
     trustHost: true,
-    pages: { signIn: "/login", verifyRequest: "/login/check-email", error: "/login" },
-    providers: [emailProvider],
+    pages: { signIn: "/login", error: "/login" },
+    // Sign-in is handled by our password flow, which writes a row in `sessions` and sets this cookie.
+    providers: [],
     callbacks: {
       session({ session, user }) {
         session.user.id = user.id;
@@ -78,14 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
     },
     events: {
       async createUser({ user }) {
-        await promoteIfAdmin(user.id, user.email);
-        if (user.id && user.email) {
-          // Attach earlier guest orders placed with the same email.
-          await getDb()
-            .update(orders)
-            .set({ userId: user.id })
-            .where(and(eq(orders.email, normalizeEmail(user.email)), isNull(orders.userId)));
-        }
+        if (user.id && user.email) await finalizeNewUser(user.id, user.email);
       },
       async signIn({ user }) {
         await promoteIfAdmin(user.id, user.email);

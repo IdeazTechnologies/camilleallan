@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Jost, PT_Serif, Poppins } from "next/font/google";
+import { CookieNotice } from "@/components/site/CookieNotice";
 import { getSettings } from "@/lib/settings";
 import { themeInitScript } from "@/lib/theme";
 import { appUrl } from "@/lib/utils";
@@ -48,7 +49,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieNotice />
+      </body>
     </html>
   );
 }
