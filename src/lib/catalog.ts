@@ -150,6 +150,18 @@ export async function getGalleryAlbums() {
   });
 }
 
+export async function getAllGalleryImages() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(TAGS.gallery);
+  const albums = await db.query.galleryAlbums.findMany({
+    where: eq(galleryAlbums.published, true),
+    orderBy: [asc(galleryAlbums.sortOrder), desc(galleryAlbums.createdAt)],
+    with: { images: { orderBy: [asc(galleryImages.sortOrder), asc(galleryImages.createdAt)] } },
+  });
+  return albums.flatMap((album) => album.images);
+}
+
 export async function getGalleryAlbum(slug: string) {
   "use cache";
   cacheLife("hours");
