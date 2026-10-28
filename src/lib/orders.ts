@@ -157,7 +157,7 @@ export async function lookupSimulation(psigateOrderId: string) {
   return sim ? { approved: sim.approved, totalCents: sim.totalCents } : null;
 }
 
-/** Confirms a payment with PSiGate's Order Verification API (or the simulator). */
+/** Looks up an order's payment with PSiGate's Order Verification API (or simulated payment records). */
 export async function verifyOrderPayment(order: Order): Promise<VerificationResult | null> {
   const config = getPsigateConfig();
   if (!config || !order.psigateOrderId) return null;
@@ -397,6 +397,10 @@ async function notifyStatusChange(
     return;
   }
   await addEvent(db, orderId, "email", `Customer notified: ${to}.`);
+}
+
+export async function addOrderEvent(orderId: string, type: "note" | "payment", message: string) {
+  await addEvent(db, orderId, type, message);
 }
 
 export async function addOrderNote(orderId: string, message: string, actorUserId: string) {

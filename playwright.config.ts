@@ -4,7 +4,7 @@ const PORT = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://localhost:${PORT}`;
 
 /**
- * Smoke test of browse -> cart -> checkout (payment simulator) -> admin sign-in -> fulfil.
+ * Smoke test of browse -> cart -> checkout (simulated payment) -> admin sign-in -> fulfil.
  * Runs against the DATABASE_URL in .env.local and cleans up the rows it creates.
  * `npm run build` first (or set E2E_DEV=1 to use the dev server).
  */

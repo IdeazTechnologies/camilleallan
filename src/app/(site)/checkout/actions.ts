@@ -10,25 +10,24 @@ import { getCart } from "@/lib/cart";
 import { getCurrentUser } from "@/lib/dal";
 import { checkbox, formValues, type ActionState } from "@/lib/forms";
 import {
+  addOrderEvent,
   CheckoutError,
   createPendingOrder,
   failOrder,
   markOrderPaid,
   releaseExpiredReservations,
   setPsigateOrderId,
-  verifyOrderPayment,
 } from "@/lib/orders";
-import { buildHostedPaymentForm, chargeSavedCard, getPsigateConfig, newPsigateOrderId } from "@/lib/payments/psigate";
+import { chargeCard, getPsigateConfig, newPsigateOrderId, parseCardInput, type CardDetails } from "@/lib/payments/psigate";
 import { itemCountOf, shippingOptionsFor } from "@/lib/pricing";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { readSettingsFresh } from "@/lib/settings";
-import { appUrl, normalizeEmail } from "@/lib/utils";
+import { normalizeEmail } from "@/lib/utils";
 
-export type CheckoutState = ActionState & {
-  redirectForm?: { action: string; method: "get" | "post"; fields: Record<string, string> };
-};
+export type CheckoutState = ActionState;
 
 const emailSchema = z.email("Please enter a valid email address.");
+const CARD_FIELDS = ["cardNumber", "cardExpiry", "cardCvv"];
 
 function completePath(order: { id: string; accessToken: string }) {
   return `/checkout/complete?${new URLSearchParams({ order: order.id, key: order.accessToken })}`;
@@ -45,6 +44,7 @@ function prefixed(errors: z.ZodError, prefix: string) {
 
 export async function placeOrderAction(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
   const values = formValues(formData);
+  for (const field of CARD_FIELDS) delete values[field];
   const fail = (message: string, errors?: Record<string, string>): CheckoutState => ({ ok: false, message, errors, values });
 
   const config = getPsigateConfig();
@@ -72,6 +72,20 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
   if (shipping.success && settings.shipToCountries.length > 0 && !settings.shipToCountries.includes(shipping.data.country)) {
     errors.ship_country = "Sorry, we don't ship to that country.";
   }
+
+  const savedCardId = String(formData.get("savedCardId") ?? "");
+  const usingSavedCard = !!savedCardId && savedCardId !== "new";
+  let card: CardDetails | null = null;
+  if (!usingSavedCard) {
+    const parsed = parseCardInput({
+      number: String(formData.get("cardNumber") ?? ""),
+      expiry: String(formData.get("cardExpiry") ?? ""),
+      cvv: String(formData.get("cardCvv") ?? ""),
+    });
+    if (parsed.ok) card = parsed.card;
+    else Object.assign(errors, parsed.errors);
+  }
+
   if (Object.keys(errors).length > 0 || !shipping.success || !billing.success || !emailParsed.success) {
     return fail("Please check the highlighted fields.", errors);
   }
@@ -98,12 +112,16 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
       : fail("Please choose a shipping method.", { shippingRuleId: "Please choose a shipping method." });
   }
 
-  const savedCardId = String(formData.get("savedCardId") ?? "");
   const savedCard =
-    savedCardId && savedCardId !== "new" && user && config.savedCardsEnabled
+    usingSavedCard && user && config.savedCardsEnabled
       ? await db.query.savedCards.findFirst({ where: and(eq(savedCards.id, savedCardId), eq(savedCards.userId, user.id)) })
       : null;
-  if (savedCardId && savedCardId !== "new" && !savedCard) return fail("That saved card is no longer available.");
+  if (usingSavedCard && !savedCard) return fail("That saved card is no longer available.");
+
+  // Separate, tighter limit on actual charge attempts to blunt card-testing bots.
+  if (!(await rateLimit(`charge:${ip}`, 6, 60 * 60))) {
+    return fail("Too many payment attempts. Please wait an hour or contact us to complete your order.");
+  }
 
   const shippingAddress: Address = shipping.data;
   const billingAddress: Address = billing.data;
@@ -137,39 +155,45 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
   await setPsigateOrderId(order.id, psigateOrderId);
   const paidOrder = { ...order, psigateOrderId };
 
-  if (savedCard) {
+  const sale = { psigateOrderId, totalCents: order.totalCents, orderNumber: order.number, email: order.email, customerIp: ip, billing: billingAddress };
+  const charge = savedCard
+    ? await chargeCard(config, { ...sale, preOrderId: savedCard.psigateOrderId })
+    : await chargeCard(config, { ...sale, card: card! });
+
+  if (charge.outcome === "approved") {
+    if (charge.amountCents !== null && charge.amountCents !== order.totalCents) {
+      console.error(`[checkout] PSiGate charged ${charge.amountCents} for order #${order.number} (expected ${order.totalCents})`);
+    }
     if (config.mode === "simulate") {
       await db.insert(paymentSimulations).values({ psigateOrderId, approved: true, totalCents: order.totalCents });
     }
-    const charge = await chargeSavedCard(config, {
-      psigateOrderId,
-      preOrderId: savedCard.psigateOrderId,
-      totalCents: order.totalCents,
-      email: order.email,
-      orderNumber: order.number,
+    await markOrderPaid(paidOrder, {
+      paid: true,
+      status: "APPROVED",
+      amountCents: charge.amountCents,
+      transRef: charge.transRef,
+      cardType: charge.cardType ?? savedCard?.cardType ?? null,
+      last4: charge.last4 ?? savedCard?.last4 ?? null,
+      expMonth: card?.expMonth ?? savedCard?.expMonth ?? null,
+      expYear: card?.expYear ?? savedCard?.expYear ?? null,
+      error: null,
     });
-    const verification = charge.approved ? await verifyOrderPayment(paidOrder) : null;
-    if (verification?.paid) {
-      await markOrderPaid(paidOrder, verification);
-      redirect(completePath(order));
-    }
-    await failOrder(order.id, `Saved card payment declined: ${charge.error ?? verification?.error ?? "not approved"}`);
-    return fail(`Your saved card was declined${charge.error ? ` (${charge.error})` : ""}. Please try another card.`);
+    redirect(completePath(order));
   }
 
-  const form = buildHostedPaymentForm(config, {
-    psigateOrderId,
-    totalCents: order.totalCents,
-    orderNumber: order.number,
-    email: order.email,
-    customerIp: ip,
-    billing: billingAddress,
-    thanksUrl: appUrl("/api/psigate/return?result=approved"),
-    noThanksUrl: appUrl("/api/psigate/return?result=declined"),
-  });
-  return {
-    ok: true,
-    message: "Redirecting to our secure payment page…",
-    redirectForm: { action: form.action, method: config.mode === "simulate" ? "get" : "post", fields: form.fields },
-  };
+  if (charge.outcome === "declined") {
+    await failOrder(order.id, `Payment declined by PSiGate: ${charge.message}`);
+    return fail(
+      savedCard
+        ? "Your saved card was declined. Please try another card."
+        : "Your card was declined and you have not been charged. Please check the details or try another card.",
+    );
+  }
+
+  // No definitive answer: keep the order pending so the reservation expiry re-checks it with PSiGate.
+  console.error(`[checkout] PSiGate outcome unknown for order #${order.number}: ${charge.message}`);
+  await addOrderEvent(order.id, "payment", `Payment outcome unknown (${charge.message}). Check PSiGate before charging again.`);
+  return fail(
+    `We couldn't confirm your payment for order #${order.number}. Please don't try again yet. Contact us and we'll check whether the charge went through.`,
+  );
 }

@@ -9,8 +9,9 @@ site with a Next.js app on Vercel, backed by Neon Postgres.
   editable pages (About, Press, Shipping), and an Instagram feed.
 - **Cart and checkout**: guest or signed-in checkout, stock reserved for 30 minutes, prices recalculated on the server,
   and flat-rate shipping rules by country, subtotal and item count.
-- **Payments**: PSiGate's hosted payment page, so card numbers never reach this app. Every payment is confirmed
-  server-to-server with PSiGate's Order Verification API, and saved cards can be enabled once PSiGate allows it.
+- **Payments**: card form on the checkout page, charged server-to-server through PSiGate's Real-time XML API (the same
+  StoreID + Passphrase setup the old WooCommerce site used). Card details are never stored. Saved cards can be enabled
+  once PSiGate allows PreOrderID recharges.
 - **Accounts**: passwordless sign-in with an emailed 6-digit code or link, plus order history, addresses, saved cards
   and newsletter preferences.
 - **Admin** (`/admin`): products and images, categories, orders (status, tracking, packing slips, notes),
@@ -33,8 +34,9 @@ npm run db:seed              # shipping rules, starter pages, admins from ADMIN_
 npm run dev
 ```
 
-For local development, set `PSIGATE_MODE=simulate` and `EMAIL_TRANSPORT=outbox`. Checkout then uses a built-in fake
-payment page. Sign-in codes are printed in the terminal and can also be read in Admin > Emails.
+For local development, set `PSIGATE_MODE=simulate` and `EMAIL_TRANSPORT=outbox`. Checkout then fakes the charge:
+card 4111 1111 1111 1111 is approved and 4000 0000 0000 0002 is declined. Sign-in codes are printed in the terminal
+and can also be read in Admin > Emails.
 
 To make someone an admin, add their email to `ADMIN_EMAILS` (they're promoted on their next sign-in) or run
 `npm run make-admin -- person@example.com`.
@@ -73,13 +75,14 @@ anything already imported.
 3. The `vercel-build` script runs database migrations before `next build`.
 4. `vercel.json` schedules the cron jobs (expire unpaid orders, finish newsletter sends, refresh the Instagram token).
    They authenticate with `CRON_SECRET`.
-5. Each payment sends PSiGate the return URL `https://camilleallen.com/api/psigate/return`. If the PSiGate account
-   restricts return URLs, register that one.
+5. Payments use PSiGate's Real-time XML API with the StoreID and Passphrase. Card details pass through the checkout
+   server action straight to PSiGate and are never stored or logged. If PSiGate restricts XML requests by IP address,
+   the Vercel project needs static outbound IPs registered with PSiGate.
 
 ## Tests
 
 - `npm test` covers pricing and shipping zones, PSiGate request building and verification, Markdown sanitizing,
   slugs, and the migration's HTML-to-Markdown and image-size helpers.
-- `npm run test:e2e` starts the production build with the payment simulator. A customer buys a temporary product,
+- `npm run test:e2e` starts the production build with simulated payments. A customer buys a temporary product,
   then an admin signs in with the emailed code and ships the order. It uses the database in `.env.local` and deletes
   everything it creates.
