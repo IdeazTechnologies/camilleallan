@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { choosePublicOrigin } from "@/lib/public-origin";
 import { appUrl } from "@/lib/utils";
 
 export async function requestIsSecure() {
@@ -8,13 +9,18 @@ export async function requestIsSecure() {
   return proto === "https";
 }
 
-/** Origin used in emailed links. Local requests keep their own host; production uses APP_URL. */
+/** Origin of the site that handled this request, for links inside emails. */
 export async function publicOrigin() {
   const h = await headers();
-  const host = h.get("x-forwarded-host")?.split(",")[0]?.trim() ?? h.get("host") ?? "";
-  const hostname = host.split(":")[0];
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return `${(await requestIsSecure()) ? "https" : "http"}://${host}`;
-  }
-  return appUrl("/").replace(/\/$/, "");
+  return choosePublicOrigin({
+    forwardedHost: h.get("x-forwarded-host"),
+    host: h.get("host"),
+    forwardedProto: h.get("x-forwarded-proto"),
+    fallback: appUrl("/"),
+  });
+}
+
+export async function publicUrl(path: string) {
+  const origin = await publicOrigin();
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }

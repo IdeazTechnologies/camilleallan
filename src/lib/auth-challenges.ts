@@ -7,7 +7,7 @@ import { authChallenges, type AuthChallengePayload, type AuthChallengePurpose } 
 import SecurityCodeEmail from "@/emails/SecurityCodeEmail";
 import { hashAuthCode } from "@/lib/auth-code";
 import { sendEmail } from "@/lib/email/send";
-import { publicOrigin } from "@/lib/request";
+import { publicUrl } from "@/lib/request";
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 
@@ -54,12 +54,13 @@ export async function issueChallenge(input: {
 
   const copy = COPY[input.purpose];
   const path = input.purpose === "reset" ? "/login/reset" : "/login/verify";
-  const url = `${await publicOrigin()}${path}?${new URLSearchParams({
+  const params = new URLSearchParams({
     email: input.email,
     token: code,
-    ...(input.purpose === "reset" ? {} : { purpose: input.purpose }),
     next: input.next,
-  })}`;
+  });
+  if (input.purpose !== "reset") params.set("purpose", input.purpose);
+  const url = await publicUrl(`${path}?${params}`);
   const result = await sendEmail({
     to: input.email,
     subject: `${copy.subject}: ${code}`,

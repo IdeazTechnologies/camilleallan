@@ -80,7 +80,7 @@ export async function resendConfirmationAction(_prev: ActionState, formData: For
     to: loaded.order.email,
     subject: `Order #${loaded.order.number} confirmation`,
     template: "order-confirmation",
-    react: createElement(OrderConfirmationEmail, { order: loaded.emailOrder, orderUrl: orderViewUrl(loaded.order) }),
+    react: createElement(OrderConfirmationEmail, { order: loaded.emailOrder, orderUrl: await orderViewUrl(loaded.order) }),
   });
   if (!result.ok) return { ok: false, message: "Email failed. See the email log." };
   await db.insert(orderEvents).values({ orderId: loaded.order.id, type: "email", message: "Confirmation re-sent by admin." });

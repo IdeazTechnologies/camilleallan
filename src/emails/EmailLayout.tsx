@@ -47,12 +47,14 @@ export function EmailLayout({
   preview,
   children,
   footer,
+  siteUrl,
 }: {
   preview: string;
   children: ReactNode;
   footer?: ReactNode;
+  siteUrl?: string;
 }) {
-  const siteUrl = process.env.APP_URL ?? "https://camilleallen.com";
+  const href = siteUrl ?? process.env.APP_URL ?? "https://camilleallen.com";
   return (
     <Html lang="en">
       <Head />
@@ -68,7 +70,7 @@ export function EmailLayout({
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "0 16px" }}>
           <Section style={{ padding: "8px 0 20px", textAlign: "center" }}>
             <Link
-              href={siteUrl}
+              href={href}
               style={{
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 fontSize: "24px",
@@ -95,8 +97,8 @@ export function EmailLayout({
             {footer ?? (
               <>
                 Camille Allen Sculptures ·{" "}
-                <Link href={siteUrl} style={{ color: colors.muted }}>
-                  {siteUrl.replace(/^https?:\/\//, "")}
+                <Link href={href} style={{ color: colors.muted }}>
+                  {href.replace(/^https?:\/\//, "")}
                 </Link>
               </>
             )}

@@ -19,7 +19,10 @@ export function ContactNotificationEmail({
   adminUrl: string;
 }) {
   return (
-    <EmailLayout preview={`${kind === "custom_order" ? "Custom order request" : "New message"} from ${name}`}>
+    <EmailLayout
+      preview={`${kind === "custom_order" ? "Custom order request" : "New message"} from ${name}`}
+      siteUrl={new URL(adminUrl).origin}
+    >
       <Text style={styles.h1}>{kind === "custom_order" ? "Custom order request" : "New contact message"}</Text>
       <Text style={styles.p}>
         <strong>{name}</strong> · <Link href={`mailto:${email}`}>{email}</Link>
@@ -40,7 +43,7 @@ export function ContactNotificationEmail({
 
 export function NewsletterConfirmEmail({ confirmUrl }: { confirmUrl: string }) {
   return (
-    <EmailLayout preview="Please confirm your subscription">
+    <EmailLayout preview="Please confirm your subscription" siteUrl={new URL(confirmUrl).origin}>
       <Text style={styles.h1}>One more step</Text>
       <Text style={styles.p}>
         Thanks for signing up for news from Camille Allen: new sculptures, studio updates and the occasional
@@ -68,6 +71,7 @@ export function NewsletterCampaignEmail({
   return (
     <EmailLayout
       preview={subject}
+      siteUrl={new URL(unsubscribeUrl).origin}
       footer={
         <>
           You&apos;re receiving this because you subscribed at camilleallen.com.{" "}

@@ -10,7 +10,8 @@ import { adminNotifyEmail, sendEmail } from "@/lib/email/send";
 import { formValues, zodErrors, type ActionState } from "@/lib/forms";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { readSettingsFresh } from "@/lib/settings";
-import { appUrl, normalizeEmail } from "@/lib/utils";
+import { publicUrl } from "@/lib/request";
+import { normalizeEmail } from "@/lib/utils";
 
 const schema = z.object({
   kind: z.enum(["general", "custom_order"]),
@@ -57,7 +58,7 @@ export async function contactAction(_prev: ActionState, formData: FormData): Pro
     subject: `${data.kind === "custom_order" ? "Custom order request" : "Website message"} from ${data.name}`,
     template: "contact-notification",
     replyTo: data.email,
-    react: createElement(ContactNotificationEmail, { ...data, adminUrl: appUrl("/admin/messages") }),
+    react: createElement(ContactNotificationEmail, { ...data, adminUrl: await publicUrl("/admin/messages") }),
   });
 
   return { ok: true, message: "Thank you! Your message has been sent. Camille will be in touch soon." };
