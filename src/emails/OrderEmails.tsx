@@ -4,7 +4,7 @@ import { OrderSummaryBlock, type EmailOrder } from "./OrderSummaryBlock";
 
 export function OrderConfirmationEmail({ order, orderUrl }: { order: EmailOrder; orderUrl: string }) {
   return (
-    <EmailLayout preview={`Thank you! Order #${order.number} is confirmed.`}>
+    <EmailLayout preview={`Thank you! Order #${order.number} is confirmed.`} siteUrl={new URL(orderUrl).origin}>
       <Text style={styles.h1}>Thank you for your order</Text>
       <Text style={styles.p}>
         Your payment was received and order <strong>#{order.number}</strong> is confirmed. Each piece is
@@ -22,7 +22,7 @@ export function OrderConfirmationEmail({ order, orderUrl }: { order: EmailOrder;
 
 export function AdminNewOrderEmail({ order, adminUrl }: { order: EmailOrder; adminUrl: string }) {
   return (
-    <EmailLayout preview={`New order #${order.number} from ${order.email}`}>
+    <EmailLayout preview={`New order #${order.number} from ${order.email}`} siteUrl={new URL(adminUrl).origin}>
       <Text style={styles.h1}>New order #{order.number}</Text>
       <Text style={styles.p}>
         A paid order was placed by <Link href={`mailto:${order.email}`}>{order.email}</Link>.
@@ -51,7 +51,7 @@ export function OrderShippedEmail({
   trackingUrl?: string | null;
 }) {
   return (
-    <EmailLayout preview={`Order #${order.number} is on its way`}>
+    <EmailLayout preview={`Order #${order.number} is on its way`} siteUrl={new URL(orderUrl).origin}>
       <Text style={styles.h1}>Your order is on its way</Text>
       <Text style={styles.p}>
         Good news! Order <strong>#{order.number}</strong> has shipped
@@ -85,7 +85,7 @@ export function OrderStatusEmail({
   message: string;
 }) {
   return (
-    <EmailLayout preview={`${headline} (order #${order.number})`}>
+    <EmailLayout preview={`${headline} (order #${order.number})`} siteUrl={new URL(orderUrl).origin}>
       <Text style={styles.h1}>{headline}</Text>
       <Text style={styles.p}>{message}</Text>
       <OrderSummaryBlock order={order} />

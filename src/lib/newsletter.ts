@@ -6,7 +6,8 @@ import { campaignRecipients, newsletterCampaigns, newsletterSubscribers } from "
 import { NewsletterCampaignEmail, NewsletterConfirmEmail } from "@/emails/MiscEmails";
 import { sendEmail } from "@/lib/email/send";
 import { renderMarkdown } from "@/lib/markdown";
-import { appUrl, normalizeEmail } from "@/lib/utils";
+import { publicUrl } from "@/lib/request";
+import { normalizeEmail } from "@/lib/utils";
 
 export async function requestSubscription(rawEmail: string, source: string, name?: string | null) {
   const email = normalizeEmail(rawEmail);
@@ -25,7 +26,7 @@ export async function requestSubscription(rawEmail: string, source: string, name
     to: email,
     subject: "Please confirm your subscription",
     template: "newsletter-confirm",
-    react: createElement(NewsletterConfirmEmail, { confirmUrl: appUrl(`/newsletter/confirm?token=${sub.token}`) }),
+    react: createElement(NewsletterConfirmEmail, { confirmUrl: await publicUrl(`/newsletter/confirm?token=${sub.token}`) }),
   });
   return { alreadySubscribed: false };
 }
@@ -116,7 +117,7 @@ export async function processCampaignBatch(campaignId: string, batchSize = 25) {
       react: createElement(NewsletterCampaignEmail, {
         subject: campaign.subject,
         html,
-        unsubscribeUrl: appUrl(`/newsletter/unsubscribe?token=${r.token}`),
+        unsubscribeUrl: await publicUrl(`/newsletter/unsubscribe?token=${r.token}`),
       }),
     });
     await db

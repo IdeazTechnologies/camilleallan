@@ -14,7 +14,8 @@ import { sendEmail } from "@/lib/email/send";
 import type { ActionState } from "@/lib/forms";
 import { renderMarkdown } from "@/lib/markdown";
 import { processCampaignBatch, startCampaign } from "@/lib/newsletter";
-import { appUrl, normalizeEmail } from "@/lib/utils";
+import { publicUrl } from "@/lib/request";
+import { normalizeEmail } from "@/lib/utils";
 
 export async function saveCampaignAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
@@ -45,7 +46,7 @@ export async function sendCampaignTestAction(_prev: ActionState, formData: FormD
     react: createElement(NewsletterCampaignEmail, {
       subject: campaign.subject,
       html: renderMarkdown(campaign.body),
-      unsubscribeUrl: appUrl("/newsletter/unsubscribe?token=test"),
+      unsubscribeUrl: await publicUrl("/newsletter/unsubscribe?token=test"),
     }),
   });
   return result.ok ? { ok: true, message: `Test sent to ${to}.` } : { ok: false, message: `Failed: ${result.error}` };

@@ -14,8 +14,9 @@ export default function SecurityCodeEmail({
   body: string;
   buttonLabel: string;
 }) {
+  const siteUrl = new URL(url).origin;
   return (
-    <EmailLayout preview={`${heading} Your code is ${code}`}>
+    <EmailLayout preview={`${heading} Your code is ${code}`} siteUrl={siteUrl}>
       <Text style={styles.h1}>{heading}</Text>
       <Text style={styles.p}>{body}</Text>
       <Section

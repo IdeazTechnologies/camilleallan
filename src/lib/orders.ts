@@ -23,7 +23,7 @@ import { adminNotifyEmail, sendEmail } from "@/lib/email/send";
 import { getPsigateConfig, verifyPayment, type VerificationResult } from "@/lib/payments/psigate";
 import { computeTotals } from "@/lib/pricing";
 import { readSettingsFresh } from "@/lib/settings";
-import { appUrl } from "@/lib/utils";
+import { publicUrl } from "@/lib/request";
 
 export const RESERVATION_MINUTES = 30;
 
@@ -32,8 +32,8 @@ export class CheckoutError extends Error {}
 export type Order = typeof orders.$inferSelect;
 type OrderWithItems = Order & { items: (typeof orderItems.$inferSelect)[] };
 
-export function orderViewUrl(order: Pick<Order, "id" | "accessToken">) {
-  return appUrl(`/checkout/complete?order=${order.id}&key=${order.accessToken}`);
+export async function orderViewUrl(order: Pick<Order, "id" | "accessToken">) {
+  return publicUrl(`/checkout/complete?order=${order.id}&key=${order.accessToken}`);
 }
 
 async function addEvent(
@@ -259,13 +259,13 @@ async function sendPaidEmails(orderId: string) {
     to: order.email,
     subject: `Order #${order.number} confirmed. Thank you!`,
     template: "order-confirmation",
-    react: createElement(OrderConfirmationEmail, { order: emailOrder, orderUrl: orderViewUrl(order) }),
+    react: createElement(OrderConfirmationEmail, { order: emailOrder, orderUrl: await orderViewUrl(order) }),
   });
   await sendEmail({
     to: adminNotifyEmail(settings.contactEmail),
     subject: `New order #${order.number}`,
     template: "admin-new-order",
-    react: createElement(AdminNewOrderEmail, { order: emailOrder, adminUrl: appUrl(`/admin/orders/${order.id}`) }),
+    react: createElement(AdminNewOrderEmail, { order: emailOrder, adminUrl: await publicUrl(`/admin/orders/${order.id}`) }),
     replyTo: order.email,
   });
   await addEvent(db, order.id, "email", "Order confirmation sent to customer.");
@@ -373,7 +373,7 @@ async function notifyStatusChange(
   const loaded = await loadOrderForEmail(orderId);
   if (!loaded) return;
   const { order, emailOrder } = loaded;
-  const orderUrl = orderViewUrl(order);
+  const orderUrl = await orderViewUrl(order);
   if (to === "shipped") {
     await sendEmail({
       to: order.email,
