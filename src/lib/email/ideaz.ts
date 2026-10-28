@@ -15,38 +15,33 @@ function parseFrom(from: string) {
   return match ? { name: match[1], email: match[2] } : { name: "", email: from.trim() };
 }
 
-/**
- * Sends one email through the Ideaz ApiPro email API.
- * The request shape lives only here so it can be adjusted to the ApiPro docs without touching callers.
- */
+/** Sends one email through the Ideaz email API (api2.ideaz.net, `sendEmail` command). */
 export async function sendViaIdeaz(message: OutgoingEmail): Promise<SendResult> {
-  const url = process.env.IDEAZ_API_URL;
+  const url = process.env.IDEAZ_API_URL || "https://api2.ideaz.net/email/";
   const key = process.env.IDEAZ_API_KEY;
-  if (!url || !key) return { ok: false, error: "IDEAZ_API_URL and IDEAZ_API_KEY must be set" };
+  if (!key) return { ok: false, error: "IDEAZ_API_KEY must be set" };
 
-  const from = parseFrom(process.env.EMAIL_FROM ?? "Camille Allen <hello@camilleallen.com>");
+  const from = parseFrom(process.env.EMAIL_FROM ?? "Camille Allen <camille@camilleallen.com>");
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${key}`,
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        from: from.email,
-        fromName: from.name,
-        to: message.to,
-        replyTo: message.replyTo,
+        cmd: "sendEmail",
+        Token: key,
+        sendTo: [parseFrom(message.to)],
+        sendFrom: from,
+        ...(message.replyTo ? { replyTo: parseFrom(message.replyTo) } : {}),
         subject: message.subject,
-        html: message.html,
-        text: message.text,
+        htmlMessage: message.html,
+        txtMessage: message.text,
       }),
       signal: AbortSignal.timeout(15_000),
     });
     const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!res.ok || body?.success === false) {
-      const detail = (body?.error ?? body?.message ?? res.statusText) as string;
+    const apiError = body?.Error ?? body?.error;
+    if (!res.ok || body?.success === false || (apiError != null && apiError !== 0 && apiError !== "0")) {
+      const detail = String(body?.Message ?? body?.message ?? apiError ?? res.statusText);
       return { ok: false, error: `Ideaz API ${res.status}: ${detail}` };
     }
     const id = (body?.id ?? body?.messageId ?? null) as string | null;
