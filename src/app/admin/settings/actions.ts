@@ -10,6 +10,7 @@ import { TAGS } from "@/lib/catalog";
 import { requireAdmin } from "@/lib/dal";
 import { sendEmail } from "@/lib/email/send";
 import { checkbox, type ActionState } from "@/lib/forms";
+import { FACEBOOK_SETTING_KEY, fetchFacebookPageName, fetchFacebookPosts, saveFacebookToken } from "@/lib/facebook";
 import { fetchInstagramPosts, refreshInstagramToken, saveInstagramToken } from "@/lib/instagram";
 import { readSettingsFresh, setSettingValue, SETTINGS_KEY, type StoreSettings } from "@/lib/settings";
 
@@ -83,6 +84,28 @@ export async function saveInstagramTokenAction(_prev: ActionState, formData: For
     await audit(admin.id, "settings.instagram", "settings", "instagram");
     updateTag(TAGS.instagram);
     return { ok: true, message: `Connected. Found ${posts.length} recent post${posts.length === 1 ? "" : "s"}.` };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "That token didn't work." };
+  }
+}
+
+export async function saveFacebookTokenAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (formData.get("intent") === "disconnect") {
+    await setSettingValue(FACEBOOK_SETTING_KEY, {});
+    await audit(admin.id, "settings.facebook.disconnect", "settings", FACEBOOK_SETTING_KEY);
+    updateTag(TAGS.facebook);
+    return { ok: true, message: "Facebook disconnected." };
+  }
+  const token = String(formData.get("token") ?? "").trim();
+  if (!token) return { ok: false, message: "Paste a Facebook Page access token." };
+  try {
+    const pageName = await fetchFacebookPageName(token);
+    const posts = await fetchFacebookPosts(token, 3);
+    await saveFacebookToken(token, pageName);
+    await audit(admin.id, "settings.facebook", "settings", FACEBOOK_SETTING_KEY);
+    updateTag(TAGS.facebook);
+    return { ok: true, message: `Connected to ${pageName ?? "the Page"}. Found ${posts.length} recent post${posts.length === 1 ? "" : "s"} with photos.` };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "That token didn't work." };
   }

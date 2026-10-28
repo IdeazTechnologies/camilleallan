@@ -50,7 +50,7 @@ export type BannerPlacement =
   | "thank_you"
   | "account";
 export type PollPlacement = "home" | "shop" | "gallery";
-export type PageLayout = "prose" | "cards";
+export type PageLayout = "prose" | "cards" | "faq";
 
 export type Address = {
   name: string;

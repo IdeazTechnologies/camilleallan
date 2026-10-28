@@ -24,6 +24,7 @@ export const TAGS = {
   polls: "polls",
   settings: "settings",
   instagram: "instagram",
+  facebook: "facebook",
 } as const;
 
 export type ProductCardData = {

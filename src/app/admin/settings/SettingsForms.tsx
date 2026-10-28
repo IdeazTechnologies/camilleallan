@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { initialActionState } from "@/lib/forms";
-import { saveInstagramTokenAction, saveSettingsAction, sendTestEmailAction } from "./actions";
+import { saveFacebookTokenAction, saveInstagramTokenAction, saveSettingsAction, sendTestEmailAction } from "./actions";
 
 type Settings = Record<string, string | number | boolean | string[]>;
 
@@ -88,7 +88,7 @@ export function InstagramForm({ connected, expiresAt }: { connected: boolean; ex
       <p className="muted" style={{ fontSize: "var(--step--1)" }}>
         {connected
           ? `Connected${expiresAt ? `; token expires ${new Date(expiresAt).toLocaleDateString()}` : ""}. It is refreshed automatically every week.`
-          : "Not connected. The site shows a link to Instagram instead of the photo grid."}
+          : "Not connected. The site shows a link to Instagram instead of the photo slideshow."}
       </p>
       <div className="field">
         <label htmlFor="token">Long-lived access token</label>
@@ -104,6 +104,37 @@ export function InstagramForm({ connected, expiresAt }: { connected: boolean; ex
         {connected && (
           <button type="submit" name="intent" value="refresh" className="btn btn-outline btn-sm">
             Refresh now
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+export function FacebookForm({ connected, pageName }: { connected: boolean; pageName: string | null }) {
+  const [state, action] = useActionState(saveFacebookTokenAction, initialActionState);
+  return (
+    <form action={action} className="form">
+      <FormMessage state={state} />
+      <p className="muted" style={{ fontSize: "var(--step--1)" }}>
+        {connected
+          ? `Connected${pageName ? ` to ${pageName}` : ""}. Photos from recent Page posts scroll on the home page.`
+          : "Not connected. The site shows a link to Facebook instead of the photo slideshow."}
+      </p>
+      <div className="field">
+        <label htmlFor="fbToken">Page access token</label>
+        <input id="fbToken" name="token" type="password" autoComplete="off" placeholder="EAA…" />
+        <span className="hint">
+          A Page token with the pages_read_engagement permission. One made from a long-lived user token does not expire.
+        </span>
+      </div>
+      <div className="cluster">
+        <SubmitButton className="btn-sm" name="intent" value="save" pendingLabel="Checking…">
+          Save token
+        </SubmitButton>
+        {connected && (
+          <button type="submit" name="intent" value="disconnect" className="btn btn-outline btn-sm">
+            Disconnect
           </button>
         )}
       </div>

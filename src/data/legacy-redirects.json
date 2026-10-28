@@ -1,15 +1,19 @@
 [
   {
+    "source": "/about",
+    "destination": "/artist"
+  },
+  {
     "source": "/about-v1",
-    "destination": "/about"
+    "destination": "/artist"
   },
   {
     "source": "/about-v2",
-    "destination": "/about"
+    "destination": "/artist"
   },
   {
     "source": "/about-v3",
-    "destination": "/about"
+    "destination": "/artist"
   },
   {
     "source": "/press-2",
@@ -25,7 +29,7 @@
   },
   {
     "source": "/faqs",
-    "destination": "/contact"
+    "destination": "/faq"
   },
   {
     "source": "/order-tracking",
@@ -42,6 +46,10 @@
   {
     "source": "/sample-page",
     "destination": "/"
+  },
+  {
+    "source": "/elements/toggles-faqs",
+    "destination": "/faq"
   },
   {
     "source": "/elements/:path*",

@@ -6,7 +6,7 @@ import { FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import type { PageLayout } from "@/db/schema";
 import { initialActionState } from "@/lib/forms";
-import { splitMarkdownSections } from "@/lib/markdown-sections";
+import { splitFaqItems, splitMarkdownSections } from "@/lib/markdown-sections";
 import { savePageAction } from "./actions";
 
 type Page = {
@@ -27,9 +27,9 @@ export function PageForm({ page }: { page?: Page }) {
   const [layout, setLayout] = useState<PageLayout>(page?.layout ?? "prose");
   const deferred = useDeferredValue(body);
   // Admin-only preview of the admin's own content; the public page is sanitized server-side.
-  const preview = (layout === "cards" ? splitMarkdownSections(deferred) : [deferred]).map((part) =>
-    marked.parse(part, { async: false, breaks: true }),
-  );
+  const toHtml = (part: string) => marked.parse(part, { async: false, breaks: true });
+  const preview = (layout === "cards" ? splitMarkdownSections(deferred) : [deferred]).map(toHtml);
+  const faqPreview = layout === "faq" ? splitFaqItems(deferred) : [];
 
   return (
     <form action={action} className="form">
@@ -52,11 +52,21 @@ export function PageForm({ page }: { page?: Page }) {
           <span className="hint">
             # Heading, ## Subheading, **bold**, *italic*, - lists, [link text](https://…), ![image alt](image-url)
             {layout === "cards" && <> · Put a line containing only --- between cards.</>}
+            {layout === "faq" && <> · Put a line containing only --- between questions. The first line of each is the question; the rest is the answer.</>}
           </span>
         </div>
         <div className="field">
           <span className="label">Preview</span>
-          {layout === "cards" ? (
+          {layout === "faq" ? (
+            <div className="faq-list panel" style={{ minHeight: 260, maxHeight: 640, overflow: "auto", alignContent: "start" }}>
+              {faqPreview.map((item, i) => (
+                <details key={i} className="card faq-item" open>
+                  <summary>{item.question.replace(/[*_`]/g, "")}</summary>
+                  <div className="prose" dangerouslySetInnerHTML={{ __html: toHtml(item.answer) }} />
+                </details>
+              ))}
+            </div>
+          ) : layout === "cards" ? (
             <div className="card-list panel" style={{ minHeight: 260, maxHeight: 640, overflow: "auto" }}>
               {preview.map((html, i) => (
                 <section key={i} className="card prose" dangerouslySetInnerHTML={{ __html: html }} />
@@ -72,6 +82,7 @@ export function PageForm({ page }: { page?: Page }) {
         <select id="layout" name="layout" value={layout} onChange={(e) => setLayout(e.target.value as PageLayout)}>
           <option value="prose">Standard text page</option>
           <option value="cards">Cards (one card per section)</option>
+          <option value="faq">FAQ (questions that open to show the answer)</option>
         </select>
       </div>
       <div className="field">

@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
-import { splitMarkdownSections } from "./markdown-sections";
+import { splitFaqItems, splitMarkdownSections } from "./markdown-sections";
 
 const allowed: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -38,9 +38,23 @@ export function renderMarkdownSections(source: string | null | undefined) {
   return splitMarkdownSections(source).map(renderMarkdown);
 }
 
+/** Questions come back as plain text (render them as React text); answers as sanitized HTML. */
+export function renderFaqItems(source: string | null | undefined) {
+  if (!source) return [];
+  return splitFaqItems(source).map(({ question, answer }) => ({
+    question: markdownToText(question),
+    answerHtml: renderMarkdown(answer),
+  }));
+}
+
 export function markdownToText(source: string | null | undefined) {
   if (!source) return "";
   return sanitizeHtml(renderMarkdown(source), { allowedTags: [], allowedAttributes: {} })
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
 }

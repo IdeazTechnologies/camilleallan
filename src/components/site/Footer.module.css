@@ -24,8 +24,10 @@
 }
 
 .brand {
-  font-family: var(--font-serif);
+  font-family: var(--font-logo);
+  font-weight: 600;
   font-size: var(--step-2);
+  text-transform: lowercase;
 }
 
 .social {
@@ -56,4 +58,11 @@
   justify-content: space-between;
   gap: var(--space-3);
   color: var(--color-muted);
+}
+
+.bottomLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-left: auto;
 }

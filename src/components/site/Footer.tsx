@@ -52,7 +52,7 @@ export async function Footer() {
           <Link href="/account">My account</Link>
         </nav>
 
-        <div className="stack">
+        <div className="stack" id="newsletter">
           <p className="eyebrow">Newsletter</p>
           <p className="muted">New sculptures and studio news, a few times a year.</p>
           <NewsletterForm />
@@ -62,7 +62,12 @@ export async function Footer() {
         <p>
           © {settings.storeName}. {settings.footerText}
         </p>
-        {settings.contactEmail && <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>}
+        <div className={styles.bottomLinks}>
+          {settings.contactEmail && <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>}
+          <a href="https://ideaz.net" target="_blank" rel="noopener">
+            design by ideaz
+          </a>
+        </div>
       </div>
     </footer>
   );
