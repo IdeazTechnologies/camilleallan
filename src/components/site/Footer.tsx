@@ -14,7 +14,7 @@ export async function Footer() {
       <div className={`container ${styles.grid}`}>
         <div className="stack">
           <p className={styles.brand}>
-            <Image src={monogram} alt="" className={styles.mark} sizes="80px" />
+            <Image src={monogram} alt="" className={styles.mark} sizes="140px" />
             {settings.storeName}
           </p>
           <p className="muted">{settings.tagline}</p>

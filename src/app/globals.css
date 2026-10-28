@@ -14,9 +14,11 @@
     --color-muted: light-dark(#6f6660, #a99f97);
     --color-border: light-dark(#e8e1da, #332d29);
     --color-border-strong: light-dark(#d6ccc2, #4a423c);
-    --color-accent: light-dark(#b5776a, #c98d7f);
-    --color-accent-strong: light-dark(#965c50, #e0a698);
-    --color-accent-soft: light-dark(#f6e9e5, #3b2a25);
+    --color-accent: #cc867c;
+    /* Text-safe shades of the accent: 4.5:1+ on the page background in each theme. */
+    --color-accent-strong: light-dark(#8f5e57, #d9a49d);
+    --color-accent-soft: light-dark(#f7edeb, #3d2c29);
+    --color-on-accent: #1d1a18;
     --color-success: light-dark(#3f7d5a, #7cc79b);
     --color-success-soft: light-dark(#e6f2ea, #1c2e23);
     --color-warning: light-dark(#9a6b14, #e0b25c);
@@ -416,6 +418,10 @@
     }
     &.btn-accent {
       --btn-bg: var(--color-accent);
+      --btn-fg: var(--color-on-accent);
+      &:hover {
+        --btn-bg: color-mix(in oklab, var(--color-accent) 88%, black);
+      }
     }
     &.btn-outline {
       --btn-bg: transparent;
