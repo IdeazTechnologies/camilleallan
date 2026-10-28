@@ -106,7 +106,7 @@
   padding-inline: 4px;
   border-radius: 999px;
   background: var(--color-accent);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-size: 0.65rem;
   font-weight: 600;
   display: grid;
