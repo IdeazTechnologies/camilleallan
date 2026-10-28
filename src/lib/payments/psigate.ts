@@ -71,6 +71,7 @@ export function parseCardInput(
   const errors: Record<string, string> = {};
   const number = raw.number.replace(/[\s-]/g, "");
   if (!/^\d{13,19}$/.test(number) || !luhn(number)) errors.cardNumber = "Please check your card number.";
+  else if (!cardBrand(number)) errors.cardNumber = "Sorry, we accept Visa and Mastercard only.";
 
   const exp = raw.expiry.replace(/\s/g, "").match(/^(\d{1,2})\/?(\d{2}|\d{4})$/);
   const month = exp ? Number(exp[1]) : 0;
@@ -88,6 +89,14 @@ export function parseCardInput(
     ok: true,
     card: { number, expMonth: String(month).padStart(2, "0"), expYear: String(year % 100).padStart(2, "0"), cvv },
   };
+}
+
+/** The PSiGate account accepts Visa and Mastercard only. */
+export function cardBrand(number: string): "visa" | "mastercard" | null {
+  if (/^4\d{12}(\d{3}){0,2}$/.test(number)) return "visa";
+  const prefix = Number(number.slice(0, 4));
+  if (number.length === 16 && (/^5[1-5]/.test(number) || (prefix >= 2221 && prefix <= 2720))) return "mastercard";
+  return null;
 }
 
 function luhn(digits: string) {

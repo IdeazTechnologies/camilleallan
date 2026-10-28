@@ -132,7 +132,9 @@ export function CheckoutForm(props: Props) {
           {cardChoice === "new" && (
             <div className="stack stack-sm">
               <div className="field">
-                <label htmlFor="cardNumber">Card number</label>
+                <label htmlFor="cardNumber">
+                  Card number <span className="muted">(Visa or Mastercard)</span>
+                </label>
                 <input
                   id="cardNumber"
                   name="cardNumber"

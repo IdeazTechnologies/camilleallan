@@ -77,6 +77,14 @@ describe("parseCardInput", () => {
     const bad = parseCardInput({ number: "4111111111111111", expiry: "13/30", cvv: "123" }, now);
     expect(!bad.ok && bad.errors.cardExpiry).toMatch(/MM\/YY/);
   });
+
+  it("accepts only Visa and Mastercard", () => {
+    const valid = { expiry: "12/30", cvv: "123" };
+    expect(parseCardInput({ ...valid, number: "5555555555554444" }, now).ok).toBe(true);
+    expect(parseCardInput({ ...valid, number: "2223003122003222" }, now).ok).toBe(true);
+    const amex = parseCardInput({ ...valid, number: "378282246310005", cvv: "1234" }, now);
+    expect(!amex.ok && amex.errors.cardNumber).toMatch(/Visa and Mastercard/);
+  });
 });
 
 describe("buildSaleXml", () => {
